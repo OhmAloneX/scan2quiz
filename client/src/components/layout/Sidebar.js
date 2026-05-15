@@ -2,12 +2,12 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 const NAV = [
-  { path: '/dashboard',  label: 'Dashboard',  icon: '⊞' },
-  { path: '/quizzes',    label: 'Quizzes',     icon: '📋' },
-  { path: '/sessions',   label: 'Sessions',    icon: '🔳' },
-  { path: '/scanner',    label: 'Scanner',     icon: '📷' },
-  { path: '/analytics',  label: 'Analytics',   icon: '📊' },
-  { path: '/students',   label: 'Students',    icon: '👥' },
+  { path: '/dashboard',  label: 'Dashboard'},
+  { path: '/quizzes',    label: 'Quizzes'},
+  { path: '/sessions',   label: 'Sessions'},
+  { path: '/scanner',    label: 'Scanner'},
+  { path: '/analytics',  label: 'Analytics'},
+  { path: '/students',   label: 'Students'},
 ]
 
 export default function Sidebar() {

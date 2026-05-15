@@ -530,7 +530,7 @@ export default function SessionsPage() {
               color: '#e0f7ff', fontSize: 18,
               fontWeight: 600, margin: '0 0 4px'
             }}>
-              Session Ready! 🎉
+              Session Ready!
             </h2>
             <p style={{
               color: 'rgba(186,230,253,0.5)',

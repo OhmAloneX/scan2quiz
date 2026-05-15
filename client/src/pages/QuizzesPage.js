@@ -484,16 +484,6 @@ export default function QuizzesPage() {
                                 { text: 'True',  val: true  },
                                 { text: 'False', val: false }
                               ].map((opt, i) => {
-                                const tfChoices = [
-                                  { text: 'True',  isCorrect: true  },
-                                  { text: 'False', isCorrect: false }
-                                ]
-                                const isSelected = qForm.choices.length === 2
-                                  ? qForm.choices[i]?.isCorrect
-                                  : opt.val === true
-                                    ? qForm.choices[0]?.isCorrect
-                                    : !qForm.choices[0]?.isCorrect
-
                                 return (
                                   <div key={i} style={{
                                     display:      'flex',

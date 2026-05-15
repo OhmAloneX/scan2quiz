@@ -73,13 +73,11 @@ export default function LoginPage() {
         </div>
 
         {/* Heading */}
-        <h1 className="text-xl font-semibold text-sky-100 mb-1">
-          Welcome back
-        </h1>
-        <p className="mb-6"
-          style={{ color: 'rgba(186,230,253,0.5)', fontSize: 13 }}>
-          Sign in to access your dashboard
-        </p>
+        <div className="text-center">
+          <h1 className="text-xl font-semibold text-sky-100 mb-1">
+            Welcome back
+          </h1>
+        </div>
 
         {/* Error message */}
         {error && (
@@ -157,21 +155,35 @@ export default function LoginPage() {
 
           {/* Submit button */}
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl font-semibold
+          type="submit"
+          disabled={loading}
+          className="w-full py-3 rounded-xl font-semibold
               transition-all duration-200 mt-2"
-            style={{
-              background: 'linear-gradient(135deg,' +
-                'rgba(34,211,238,0.2),rgba(99,102,241,0.2))',
-              border:    '1px solid rgba(34,211,238,0.45)',
-              color:     '#22d3ee',
-              fontSize:  15
-            }}
-          >
-            {loading ? 'Signing in...' : 'Sign In →'}
-          </button>
-        </form>
+          style={{
+            background: 'linear-gradient(135deg,' +
+              'rgba(34,211,238,0.2),rgba(99,102,241,0.2))',
+            border:    '1px solid rgba(34,211,238,0.45)',
+            color:     '#22d3ee',
+            fontSize:  15
+          }}
+        >
+          {loading ? 'Signing in...' : 'Sign In →'}
+        </button>
+
+        {/* Create account (teacher) */}
+        <div style={{ textAlign: 'center', marginTop: 14 }}>
+          <p style={{
+            color: 'rgba(186,230,253,0.4)', fontSize: 13, margin: 0
+          }}>
+            New teacher?{' '}
+            <a href="/register" style={{
+              color: '#22d3ee', textDecoration: 'none', fontWeight: 500
+            }}>
+              Create an account
+            </a>
+          </p>
+        </div>
+      </form>
       </div>
     </div>
   )

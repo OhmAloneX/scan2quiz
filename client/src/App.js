@@ -8,6 +8,9 @@ import ScannerPage    from './pages/ScannerPage'
 import QuizPage       from './pages/QuizPage'
 import SessionsPage   from './pages/SessionsPage'
 import StudentsPage   from './pages/StudentsPage'
+import RegisterPage   from './pages/RegisterPage'
+import JoinPage       from './pages/JoinPage'
+import TakeQuizPage   from './pages/TakeQuizPage'
 
 function ProtectedRoute({ children }) {
   const { isAuth, loading } = useAuth()
@@ -33,6 +36,9 @@ export default function App() {
         <Route path="/dashboard" element={
           <ProtectedRoute><DashboardPage /></ProtectedRoute>
         }/>
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/join"      element={<JoinPage />} />
+        <Route path="/take-quiz/:attemptId" element={<TakeQuizPage />} />
         <Route path="/quizzes" element={
           <ProtectedRoute><QuizzesPage /></ProtectedRoute>
         }/>

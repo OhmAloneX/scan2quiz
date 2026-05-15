@@ -22,10 +22,6 @@ export default function ScannerPage() {
   }, [])
 
   // Stop scanner when switching modes
-  useEffect(() => {
-    if (scanning) stopScanner()
-  }, [mode])
-
   async function submitScan(value, type) {
     if (cooldownRef.current) return
     cooldownRef.current = true

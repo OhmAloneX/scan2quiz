@@ -1,11 +1,28 @@
-const QRCode    = require('qrcode')
+// services/sessionService.js
+const QRCode         = require('qrcode')
 const { v4: uuidv4 } = require('uuid')
-const { query } = require('../config/db')
+const os             = require('os')
+const { query }      = require('../config/db')
 
+// ── Get local network IP ───────────────────────────────
+function getLocalIP() {
+  const interfaces = os.networkInterfaces()
+  for (const iface of Object.values(interfaces)) {
+    for (const alias of iface) {
+      if (alias.family === 'IPv4' && !alias.internal) {
+        return alias.address
+      }
+    }
+  }
+  return 'localhost'
+}
+
+// ── Generate short session code ────────────────────────
 function makeSessionCode() {
   return Math.random().toString(36).toUpperCase().slice(2, 8)
 }
 
+// ── Create a new session + QR ──────────────────────────
 async function createSession(quizId, teacherId) {
   const [quiz] = await query(
     `SELECT id, title FROM quizzes
@@ -16,16 +33,18 @@ async function createSession(quizId, teacherId) {
 
   const qrToken     = uuidv4()
   const sessionCode = makeSessionCode()
+  const localIP     = getLocalIP()
 
-  const qrPayload = JSON.stringify({
-    token: qrToken,
-    code:  sessionCode,
-    quiz:  quiz.title
-  })
+  // QR payload — opens join page on student phone
+  const joinUrl =
+    `http://${localIP}:3000/join` +
+    `?token=${qrToken}` +
+    `&code=${sessionCode}` +
+    `&quiz=${encodeURIComponent(quiz.title)}`
 
-  const qrImage = await QRCode.toDataURL(qrPayload, {
-    width:  300,
-    margin: 2,
+  const qrImage = await QRCode.toDataURL(joinUrl, {
+    width:                300,
+    margin:               2,
     errorCorrectionLevel: 'H'
   })
 
@@ -43,10 +62,12 @@ async function createSession(quizId, teacherId) {
     sessionCode,
     qrToken,
     qrImage,
+    joinUrl,
     status:      'open'
   }
 }
 
+// ── Get session by QR token ────────────────────────────
 async function getSessionByToken(qrToken) {
   const [session] = await query(
     `SELECT s.*, q.title AS quiz_title, q.time_limit
@@ -62,6 +83,7 @@ async function getSessionByToken(qrToken) {
   return session
 }
 
+// ── List sessions by teacher ───────────────────────────
 async function getSessionsByTeacher(teacherId) {
   return query(
     `SELECT s.id, s.session_code, s.status,
@@ -78,6 +100,7 @@ async function getSessionsByTeacher(teacherId) {
   )
 }
 
+// ── Close a session ────────────────────────────────────
 async function closeSession(sessionId, teacherId) {
   const result = await query(
     `UPDATE sessions
@@ -90,13 +113,35 @@ async function closeSession(sessionId, teacherId) {
   return { message: 'Session closed' }
 }
 
+// ── Handle QR or barcode scan ──────────────────────────
 async function handleScan(type, value) {
   if (type === 'QR_CODE') {
-    let parsed
-    try { parsed = JSON.parse(value) }
-    catch { throw { status: 400, message: 'Invalid QR data' } }
+    let token
 
-    const session = await getSessionByToken(parsed.token)
+    // Handle both formats:
+    // Format A: full join URL (new format)
+    // Format B: JSON string (old format)
+    if (value.startsWith('http')) {
+      // Extract token from URL
+      try {
+        const url    = new URL(value)
+        token        = url.searchParams.get('token')
+      } catch {
+        throw { status: 400, message: 'Invalid QR URL' }
+      }
+    } else {
+      // Try JSON parse (old format)
+      try {
+        const parsed = JSON.parse(value)
+        token        = parsed.token
+      } catch {
+        throw { status: 400, message: 'Invalid QR data' }
+      }
+    }
+
+    if (!token) throw { status: 400, message: 'No token in QR code' }
+
+    const session = await getSessionByToken(token)
     return { success: true, message: 'QR session found', session }
   }
 
@@ -113,6 +158,9 @@ async function handleScan(type, value) {
 }
 
 module.exports = {
-  createSession, getSessionByToken,
-  getSessionsByTeacher, closeSession, handleScan
+  createSession,
+  getSessionByToken,
+  getSessionsByTeacher,
+  closeSession,
+  handleScan
 }
