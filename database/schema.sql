@@ -146,3 +146,27 @@ VALUES
 ('2024-00003', 'Pedro Reyes',     'BSCS 3-B', 3, 'BC2024003'),
 ('2024-00004', 'Ana Gonzales',    'BSIT 2-A', 2, 'BC2024004'),
 ('2024-00005', 'Carlo Mendoza',   'BSIT 2-A', 2, 'BC2024005');
+
+
+
+
+
+
+
+USE scan2quiz;
+
+-- Add status column to users table
+ALTER TABLE users
+ADD COLUMN status ENUM('pending','active','rejected')
+NOT NULL DEFAULT 'active'
+AFTER role;
+
+-- Add approved_at timestamp
+ALTER TABLE users
+ADD COLUMN approved_at DATETIME DEFAULT NULL
+AFTER status;
+
+-- Update existing users to active
+-- (so current admin/teacher accounts still work)
+UPDATE users SET status = 'active'
+WHERE status = 'active' OR status IS NULL;

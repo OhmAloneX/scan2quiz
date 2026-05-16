@@ -11,6 +11,7 @@ import StudentsPage   from './pages/StudentsPage'
 import RegisterPage   from './pages/RegisterPage'
 import JoinPage       from './pages/JoinPage'
 import TakeQuizPage   from './pages/TakeQuizPage'
+import AdminPage from './pages/AdminPage'
 
 function ProtectedRoute({ children }) {
   const { isAuth, loading } = useAuth()
@@ -56,6 +57,9 @@ export default function App() {
         }/>
         <Route path="/students" element={
           <ProtectedRoute><StudentsPage /></ProtectedRoute>
+        }/>
+        <Route path="/admin" element={
+          <ProtectedRoute><AdminPage /></ProtectedRoute>
         }/>
         <Route path="*"
           element={<Navigate to="/dashboard" replace />}

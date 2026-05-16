@@ -35,8 +35,13 @@ export default function RegisterPage() {
         password: form.password,
         role:     'teacher'
       })
-      setSuccess('Account created! Redirecting to login...')
-      setTimeout(() => navigate('/login'), 2000)
+      setSuccess(
+        'Registration submitted! Your account is ' +
+        'pending admin approval. You will be notified ' +
+        'once your account is approved.'
+      )
+      // Don't redirect — let them read the message
+      setTimeout(() => navigate('/login'), 4000)
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed')
     } finally {
@@ -175,14 +180,30 @@ export default function RegisterPage() {
           {success && (
             <div style={{
               marginBottom: 16,
-              padding:      '12px 14px',
-              background:   'rgba(74,222,128,0.1)',
+              padding:      '16px',
+              background:   'rgba(74,222,128,0.08)',
               border:       '1px solid rgba(74,222,128,0.3)',
-              borderRadius: 12,
-              color:        '#4ade80',
-              fontSize:     13
+              borderRadius: 14,
             }}>
-              ✅ {success}
+              <p style={{
+                color:      '#4ade80',
+                fontSize:   15,
+                fontWeight: 600,
+                margin:     '0 0 8px'
+              }}>
+                ✅ Registration Submitted!
+              </p>
+              <p style={{
+                color:    'rgba(186,230,253,0.6)',
+                fontSize: 13,
+                margin:   0,
+                lineHeight: 1.6
+              }}>
+                Your account is <strong style={{ color: '#fbbf24' }}>
+                pending admin approval</strong>. An administrator
+                will review your account shortly.
+                You will be redirected to login in a moment.
+              </p>
             </div>
           )}
 
