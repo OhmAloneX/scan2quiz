@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { useValidation, rules } from '../hooks/useValidation'
 import Sidebar   from '../components/layout/Sidebar'
 import GlassCard from '../components/ui/GlassCard'
+import Pagination from '../components/ui/Pagination'
 import api       from '../services/api'
 import useResponsive from '../hooks/useResponsive'
+
 
 export default function StudentsPage() {
   const { isMobile, isTablet } = useResponsive()
@@ -118,6 +120,22 @@ const {
       .includes(search.toLowerCase())                       ||
     s.barcode.includes(search)
   )
+
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [rowsPerPage, search])
+
+  const totalItems = filtered.length
+  const totalPages = Math.max(1, Math.ceil(totalItems / rowsPerPage))
+
+  const startIndex = (currentPage - 1) * rowsPerPage
+  const endIndex = startIndex + rowsPerPage
+
+  const paginatedStudents = filtered.slice(startIndex, endIndex)
+
 
   const inputStyle = {
     width:        '100%',
@@ -571,7 +589,8 @@ const {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((student, i) => (
+                  {paginatedStudents.map((student, i) => (
+
                     <tr key={student.id} style={{
                       borderBottom: i < filtered.length - 1
                         ? '1px solid rgba(103,232,249,0.06)'
@@ -705,9 +724,23 @@ const {
                 </table>
               </div>
 
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                rowsPerPage={rowsPerPage}
+                setRowsPerPage={setRowsPerPage}
+                onPageChange={(p) => {
+                  const next = Math.min(Math.max(1, p), totalPages)
+                  setCurrentPage(next)
+                }}
+                totalItems={totalItems}
+                isMobile={isMobile}
+              />
+
             </GlassCard>
           )}
         </div>
+
       </div>
     </div>
   )

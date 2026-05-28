@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import Sidebar       from '../components/layout/Sidebar'
 import GlassCard     from '../components/ui/GlassCard'
 import StatCard      from '../components/ui/StatCard'
+import useResponsive  from '../hooks/useResponsive'
+
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, PieChart, Pie,
@@ -80,6 +82,9 @@ export default function AnalyticsPage() {
   const [topStuds, setTopStuds] = useState([])
   const [loading,  setLoading]  = useState(true)
 
+  const { isMobile, isTablet } = useResponsive()
+
+
   useEffect(() => {
     async function load() {
       try {
@@ -125,7 +130,8 @@ export default function AnalyticsPage() {
       <div style={{ flex: 1, overflow: 'auto' }}>
         {/* Top bar */}
         <div style={{
-          padding:        '16px 28px',
+          padding:        isMobile ? '12px 14px' : isTablet ? '14px 20px' : '16px 28px',
+
           background:     'rgba(255,255,255,0.03)',
           backdropFilter: 'blur(16px)',
           borderBottom:   '1px solid rgba(103,232,249,0.08)',
@@ -149,7 +155,8 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        <div style={{ padding: '24px 28px' }}>
+        <div style={{ padding: isMobile ? '16px 14px' : isTablet ? '20px 20px' : '24px 28px' }}>
+
           {loading ? (
             <div style={{
               display:        'flex',
@@ -166,10 +173,12 @@ export default function AnalyticsPage() {
               {/* Stat cards */}
               <div style={{
                 display:             'grid',
-                gridTemplateColumns: 'repeat(4,1fr)',
-                gap:                 16,
-                marginBottom:        24
+                gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : isTablet ? 'repeat(2,1fr)' : 'repeat(4,1fr)',
+                gap:                 isMobile ? 12 : 16,
+                marginBottom:        isMobile ? 18 : 24
               }}>
+
+
                 <StatCard
                   label="Total Attempts"
                   value={stats?.total_attempts ?? 0}
@@ -201,10 +210,11 @@ export default function AnalyticsPage() {
               {/* Charts row */}
               <div style={{
                 display:             'grid',
-                gridTemplateColumns: '1fr 340px',
-                gap:                 20,
-                marginBottom:        24
+                gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 280px' : '1fr 340px',
+                gap:                 isMobile ? 14 : 20,
+                marginBottom:        isMobile ? 18 : 24
               }}>
+
                 {/* Line chart */}
                 <GlassCard glow>
                   <div style={{
@@ -428,6 +438,7 @@ export default function AnalyticsPage() {
                 </h2>
 
                 {topStuds.length === 0 ? (
+
                   <div style={{
                     textAlign: 'center', padding: '32px 0'
                   }}>
@@ -439,9 +450,13 @@ export default function AnalyticsPage() {
                     </p>
                   </div>
                 ) : (
-                  <table style={{
-                    width: '100%', borderCollapse: 'collapse'
-                  }}>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{
+                      width:           '100%',
+                      borderCollapse:  'collapse',
+                      minWidth:        650
+                    }}>
+
                     <thead>
                       <tr>
                         {['#', 'Student', 'Section',
@@ -548,8 +563,10 @@ export default function AnalyticsPage() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                    </table>
+                  </div>
                 )}
+
               </GlassCard>
             </>
           )}

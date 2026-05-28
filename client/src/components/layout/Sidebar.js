@@ -39,8 +39,13 @@ const NAV = [
   { path: '/scanner',   label: 'Scanner', role: null },
   { path: '/analytics', label: 'Analytics', role: null },
   { path: '/students',  label: 'Students', role: null },
+  { path: '/audit-logs', label: 'Audit Logs', role: 'admin' },
+  { path: '/audit-logs', label: 'Audit Logs', role: 'teacher' },
+
+
   { path: '/admin',     label: 'Admin', role: 'admin' },
 ]
+
 
 export default function Sidebar() {
   const navigate = useNavigate()

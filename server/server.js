@@ -3,11 +3,16 @@ const express = require('express')
 const cors    = require('cors')
 const { testConnection }              = require('./config/db')
 const { errorHandler, requestLogger } = require('./middleware/errorHandler')
+const { auditContext } = require('./middleware/auditContext')
+const { auditAuthFailureLogger } = require('./middleware/auditAuthFailureLogger')
+
 
 const authRoutes = require('./routes/auth')
 const quizRoutes = require('./routes/quizzes')
 const sessionRoutes = require('./routes/sessions')
 const analyticsRoutes = require('./routes/analytics')
+const auditRoutes = require('./routes/audit')
+
 
 const app  = express()
 const PORT = process.env.PORT || 5000
@@ -32,12 +37,16 @@ app.use(cors({
 }))
 app.use(express.json())
 app.use(requestLogger)
+app.use(auditContext)
 
 // Routes
 app.use('/api/auth', authRoutes)
+
 app.use('/api/quizzes', quizRoutes)
 app.use('/api', sessionRoutes)
 app.use('/api/analytics', analyticsRoutes)
+app.use('/api/audit', auditRoutes)
+
 
 // Health check
 app.get('/api/health', (_req, res) => {
@@ -49,15 +58,9 @@ app.use((_req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' })
 })
 
-// Error handler
+// Error handler + audit auth failures
+app.use(auditAuthFailureLogger)
 app.use(errorHandler)
-
-async function start() {
-  await testConnection()
-  app.listen(PORT, () => {
-    console.log(`Server running → http://localhost:${PORT}`)
-  })
-}
 
 async function start() {
   await testConnection()

@@ -170,3 +170,33 @@ AFTER status;
 -- (so current admin/teacher accounts still work)
 UPDATE users SET status = 'active'
 WHERE status = 'active' OR status IS NULL;
+
+-- ─────────────────────────────────────────────────────────────
+-- Audit trail table (enterprise-style activity logging)
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id       INT UNSIGNED DEFAULT NULL,
+  role          ENUM('admin','teacher','student') DEFAULT NULL,
+  action_type   VARCHAR(80) NOT NULL,
+  module        VARCHAR(40) NOT NULL,
+  description   VARCHAR(255) DEFAULT NULL,
+  target_id     VARCHAR(64) DEFAULT NULL,
+  target_type   VARCHAR(40) DEFAULT NULL,
+  ip_address    VARCHAR(45) DEFAULT NULL,
+  user_agent    VARCHAR(255) DEFAULT NULL,
+  severity      ENUM('info','warning','critical') NOT NULL DEFAULT 'info',
+  created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id),
+  INDEX idx_audit_created_at (created_at),
+  INDEX idx_audit_action_type (action_type),
+  INDEX idx_audit_module_action_time (module, action_type, created_at),
+  INDEX idx_audit_user_time (user_id, created_at),
+
+  -- Optional FK: keep it nullable so unauthenticated events are allowed
+  CONSTRAINT fk_audit_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

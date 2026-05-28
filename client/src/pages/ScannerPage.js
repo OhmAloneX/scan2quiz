@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import Sidebar   from '../components/layout/Sidebar'
 import GlassCard from '../components/ui/GlassCard'
+import useResponsive from '../hooks/useResponsive'
 import { handleScan } from '../services/sessionService'
+
 
 const SCANNER_ID = 'scan2quiz-reader'
 
@@ -120,13 +122,18 @@ export default function ScannerPage() {
     }
   }
 
+  const { isMobile, isTablet } = useResponsive()
+
+  const outerPadX = isMobile ? 14 : isTablet ? 20 : 28
+  const contentPadY = isMobile ? 16 : isTablet ? 20 : 24
+
   const btnStyle = (active) => ({
     display:        'flex',
     alignItems:     'center',
     justifyContent: 'center',
-    gap:            8,
+    gap:            isMobile ? 6 : 8,
     flex:           1,
-    padding:        '11px 16px',
+    padding:        isMobile ? '10px 12px' : '11px 16px',
     borderRadius:   18,
     border:         'none',
     cursor:         'pointer',
@@ -140,7 +147,7 @@ export default function ScannerPage() {
     color:      active
       ? '#e0f7ff'
       : 'rgba(186,230,253,0.6)',
-    fontSize:   14,
+    fontSize:   isMobile ? 13 : 14,
     fontWeight: active ? 600 : 400,
     fontFamily: 'inherit',
     transition: 'all 0.2s'
@@ -152,15 +159,18 @@ export default function ScannerPage() {
       minHeight:  '100vh',
       background: 'linear-gradient(135deg,' +
         '#060d1f 0%,#0a1628 50%,#0d1f3c 100%)',
-      fontFamily: "'Segoe UI',system-ui,sans-serif"
+fontFamily: "'Segoe UI',system-ui,sans-serif",
+      overflowX:   'hidden'
     }}>
       <Sidebar />
 
       <div style={{ flex: 1, overflow: 'auto' }}>
         {/* Top bar */}
-        <div style={{
-          padding:        '16px 28px',
-          background:     'rgba(255,255,255,0.03)',
+          <div style={{
+            padding:        `${contentPadY ? contentPadY : 16}px ${outerPadX}px`,
+            background:     'rgba(255,255,255,0.03)',
+
+
           backdropFilter: 'blur(16px)',
           borderBottom:   '1px solid rgba(103,232,249,0.08)'
         }}>
@@ -179,8 +189,9 @@ export default function ScannerPage() {
         </div>
 
         <div style={{
-          padding:   '24px 28px',
-          maxWidth:  580,
+          padding:   `${contentPadY}px ${outerPadX}px`,
+          maxWidth:  isMobile ? 520 : 580,
+
           margin:    '0 auto'
         }}>
 
@@ -263,14 +274,19 @@ export default function ScannerPage() {
 
             {/* Camera viewport */}
             <div style={{ padding: '16px 22px' }}>
-              <div style={{
-                position:     'relative',
-                borderRadius: 16,
-                overflow:     'hidden',
-                background:   'rgba(0,0,0,0.4)',
-                border:       '1px solid rgba(103,232,249,0.2)',
-                minHeight:    scanning ? 280 : 0
-              }}>
+            <div style={{
+              position:     'relative',
+              borderRadius: 16,
+              overflow:     'hidden',
+              background:   'rgba(0,0,0,0.4)',
+              border:       '1px solid rgba(103,232,249,0.2)',
+              minHeight:    scanning
+                ? (isMobile ? 240 : isTablet ? 260 : 280)
+                : 0,
+              width:         '100%',
+              boxSizing:    'border-box'
+            }}>
+
                 <div id={SCANNER_ID} style={{ width: '100%' }} />
 
                 {/* Idle state */}
@@ -317,7 +333,8 @@ export default function ScannerPage() {
               const e = errorMessages[error]
               return (
                 <div style={{
-                  margin:     '0 22px 16px',
+                  margin:     `0 ${outerPadX}px 16px`,
+
                   padding:    16,
                   background: 'rgba(248,113,113,0.08)',
                   border:     '1px solid rgba(248,113,113,0.25)',
@@ -347,8 +364,9 @@ export default function ScannerPage() {
 
             {/* Action buttons */}
             <div style={{
-              padding: '0 22px 22px',
-              display: 'flex', gap: 10
+              padding: `${isMobile ? 0 : 0} ${outerPadX}px 22px`,
+              display: 'flex',
+              gap: isMobile ? 8 : 10
             }}>
               {!scanning ? (
                 <button onClick={startScanner} style={{

@@ -25,13 +25,13 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Redirect to login on 401
+// Handle 401 by clearing local auth state.
+// Route redirection is handled by React Router / AuthContext to avoid race conditions.
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('s2q_token')
-      window.location.href = '/login'
     }
     return Promise.reject(err)
   }

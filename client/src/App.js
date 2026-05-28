@@ -12,6 +12,8 @@ import RegisterPage   from './pages/RegisterPage'
 import JoinPage       from './pages/JoinPage'
 import TakeQuizPage   from './pages/TakeQuizPage'
 import AdminPage from './pages/AdminPage'
+import AuditLogsPage from './pages/AuditLogsPage'
+
 
 function ProtectedRoute({ children }) {
   const { isAuth, loading } = useAuth()
@@ -58,11 +60,17 @@ export default function App() {
         <Route path="/students" element={
           <ProtectedRoute><StudentsPage /></ProtectedRoute>
         }/>
+        <Route path="/audit-logs" element={
+          <ProtectedRoute>
+            <AuditLogsPage />
+          </ProtectedRoute>
+        }/>
         <Route path="/admin" element={
           <ProtectedRoute><AdminPage /></ProtectedRoute>
         }/>
+
         <Route path="*"
-          element={<Navigate to="/dashboard" replace />}
+          element={<Navigate to="/login" replace />}
         />
       </Routes>
     </BrowserRouter>

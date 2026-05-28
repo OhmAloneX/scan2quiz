@@ -36,7 +36,8 @@ export default function RegisterPage() {
 
   const {
     getError, isValid, handleBlur,
-    handleChange, validateAll
+    handleChange, validateAll,
+    reset
   } = useValidation(schema)
 
   function update(field, value) {
@@ -57,6 +58,14 @@ export default function RegisterPage() {
         password: form.password,
         role:     'teacher'
       })
+
+      // Clear all user inputs after successful registration
+      // (prevents stale values in memory/UI and wipes password immediately)
+      setForm({
+        name: '', email: '', password: '', confirm: ''
+      })
+      reset()
+
       setSuccess(true)
       setTimeout(() => navigate('/login'), 4000)
     } catch (err) {
