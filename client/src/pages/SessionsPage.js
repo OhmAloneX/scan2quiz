@@ -137,7 +137,9 @@ export default function SessionsPage() {
           </button>
         </div>
 
-        <div style={{ padding: '24px 28px' }}>
+        <div style={{
+          padding: '16px 14px',
+        }}>
 
           {/* Create Session Form */}
           {showForm && (
@@ -238,41 +240,47 @@ export default function SessionsPage() {
                     Cancel
                   </button>
                 </div>
+                <style>{`@media (max-width: 768px){
+                  .s2q-sessions-stats{grid-template-columns:repeat(2,1fr) !important;}
+                }
+                @media (max-width: 480px){
+                  .s2q-sessions-stats{grid-template-columns:repeat(2,1fr) !important;gap:12px !important;}
+                }`}</style>
               </form>
             </GlassCard>
           )}
 
           {/* Stats row */}
           {!loading && (
-            <div style={{
-              display:             'grid',
+            <div className="s2q-sessions-stats" style={{
+              display: 'grid',
               gridTemplateColumns: 'repeat(4, 1fr)',
-              gap:                 16,
-              marginBottom:        24
+              gap: 16,
+              marginBottom: 24,
             }}>
               {[
                 {
                   label: 'Total Sessions',
                   value: sessions.length,
-                  color: '#22d3ee', icon: '🔳'
+                  color: '#22d3ee',
                 },
                 {
                   label: 'Open Now',
                   value: sessions.filter(
                     s => s.status === 'open').length,
-                  color: '#4ade80', icon: '✅'
+                  color: '#4ade80',
                 },
                 {
                   label: 'Closed',
                   value: sessions.filter(
                     s => s.status === 'closed').length,
-                  color: '#f87171', icon: '🔒'
+                  color: '#f87171',
                 },
                 {
                   label: 'Total Attempts',
                   value: sessions.reduce(
                     (sum, s) => sum + (+s.attempt_count || 0), 0),
-                  color: '#a78bfa', icon: '✏️'
+                  color: '#a78bfa',
                 }
               ].map(stat => (
                 <GlassCard key={stat.label} style={{ padding: 18 }}>
@@ -318,7 +326,6 @@ export default function SessionsPage() {
             </div>
           ) : sessions.length === 0 ? (
             <GlassCard style={{ textAlign: 'center', padding: 48 }}>
-              <p style={{ fontSize: 40, marginBottom: 12 }}>🔳</p>
               <p style={{
                 color: '#e0f7ff', fontSize: 16,
                 fontWeight: 600, margin: '0 0 8px'
@@ -353,9 +360,12 @@ export default function SessionsPage() {
                 </span>
               </div>
 
-              <table style={{
-                width: '100%', borderCollapse: 'collapse'
-              }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  minWidth: 760
+                }}>
                 <thead>
                   <tr>
                     {['Quiz', 'Code', 'Attempts',
@@ -442,7 +452,7 @@ export default function SessionsPage() {
                           </span>
                         </td>
                         <td style={{ padding: '12px' }}>
-                          <div style={{ display: 'flex', gap: 8 }}>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                             <button
                               onClick={async () => {
                                 try {
@@ -496,6 +506,7 @@ export default function SessionsPage() {
                   })}
                 </tbody>
               </table>
+              </div>
             </GlassCard>
           )}
         </div>

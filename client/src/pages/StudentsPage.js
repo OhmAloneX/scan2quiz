@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react'
+import { useValidation, rules } from '../hooks/useValidation'
 import Sidebar   from '../components/layout/Sidebar'
 import GlassCard from '../components/ui/GlassCard'
 import api       from '../services/api'
+import useResponsive from '../hooks/useResponsive'
 
 export default function StudentsPage() {
+  const { isMobile, isTablet } = useResponsive()
   const [students, setStudents] = useState([])
+
+
   const [loading,  setLoading]  = useState(true)
   const [search,   setSearch]   = useState('')
   const [showForm, setShowForm] = useState(false)
@@ -13,6 +18,35 @@ export default function StudentsPage() {
     student_id: '', name: '',
     section: '', year_level: '', barcode: ''
   })
+
+  const studentSchema = {
+  student_id: [
+    rules.required('Student ID'),
+    rules.minLength(5, 'Student ID'),
+    rules.maxLength(30, 'Student ID')
+  ],
+
+  name: [
+    rules.required('Full name'),
+    rules.minLength(2, 'Full name'),
+    rules.maxLength(100, 'Full name')
+  ],
+
+  barcode: [
+    rules.required('Barcode'),
+    rules.noSpaces(),
+    rules.minLength(3, 'Barcode')
+  ]
+}
+
+const {
+  getError: getStuError,
+  isValid:  isStuValid,
+  handleBlur:   stuBlur,
+  handleChange: stuChange,
+  validateAll:  validateStu,
+  reset:        resetStu
+} = useValidation(studentSchema)
 
   useEffect(() => { loadStudents() }, [])
 
@@ -29,19 +63,36 @@ export default function StudentsPage() {
 
   async function handleCreate(e) {
     e.preventDefault()
+
+    if (!validateStu(form)) return
+
     try {
       await api.post('/students', {
         ...form,
-        year_level: form.year_level ? +form.year_level : null
+        year_level: form.year_level
+          ? +form.year_level
+          : null
       })
+
       setShowForm(false)
+
+      resetStu()
+
       setForm({
-        student_id: '', name: '',
-        section: '', year_level: '', barcode: ''
+        student_id: '',
+        name: '',
+        section: '',
+        year_level: '',
+        barcode: ''
       })
+
       loadStudents()
+
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to add student')
+      alert(
+        err.response?.data?.message ||
+        'Failed to add student'
+      )
     }
   }
 
@@ -89,13 +140,15 @@ export default function StudentsPage() {
   }
 
   const btnStyle = {
-    padding:      '10px 20px',
+    padding:      isMobile ? '9px 16px' : '10px 20px',
+
     background:   'linear-gradient(135deg,' +
       'rgba(34,211,238,0.2),rgba(99,102,241,0.2))',
     border:       '1px solid rgba(34,211,238,0.45)',
     borderRadius: 12,
     color:        '#22d3ee',
-    fontSize:     14,
+    fontSize:     isMobile ? 13 : 14,
+
     fontWeight:   600,
     cursor:       'pointer',
     fontFamily:   'inherit'
@@ -114,19 +167,26 @@ export default function StudentsPage() {
       <div style={{ flex: 1, overflow: 'auto' }}>
         {/* Top bar */}
         <div style={{
-          padding:        '16px 28px',
+          padding:        isMobile
+            ? '12px 14px'
+            : isTablet
+              ? '16px 18px'
+              : '16px 28px',
           background:     'rgba(255,255,255,0.03)',
           backdropFilter: 'blur(16px)',
           borderBottom:   '1px solid rgba(103,232,249,0.08)',
           display:        'flex',
           alignItems:     'center',
           justifyContent: 'space-between',
-          gap:            16
+          gap:            isMobile ? 12 : 16,
+          flexDirection: isMobile ? 'column' : 'row'
         }}>
           <div>
             <h1 style={{
-              color: '#e0f7ff', fontSize: 20,
-              fontWeight: 600, margin: 0
+              color: '#e0f7ff',
+              fontSize: isMobile ? 18 : 20,
+              fontWeight: 600,
+              margin: 0
             }}>
               Students
             </h1>
@@ -138,12 +198,17 @@ export default function StudentsPage() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
-            <input
+              <input
               type="text"
               placeholder="Search name, ID, section..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              style={{ ...inputStyle, width: 260, height: 40 }}
+              style={{
+                ...inputStyle,
+                width: isMobile ? '100%' : 260,
+                height: 40,
+                fontSize: isMobile ? 13 : 13
+              }}
             />
             <button
               onClick={() => setShowForm(f => !f)}
@@ -153,21 +218,33 @@ export default function StudentsPage() {
           </div>
         </div>
 
-        <div style={{ padding: '24px 28px' }}>
+        <div style={{
+          padding: isMobile
+            ? '16px 14px'
+            : isTablet
+              ? '20px 18px'
+              : '24px 28px'
+        }}>
+
 
           {/* Stats */}
           {!loading && (
             <div style={{
-              display:             'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap:                 16,
-              marginBottom:        24
+              display: 'grid',
+              gridTemplateColumns: isMobile
+                ? '1fr'
+                : isTablet
+                  ? 'repeat(2, 1fr)'
+                  : 'repeat(4, 1fr)',
+              gap: isMobile ? 12 : 16,
+              marginBottom: isMobile ? 16 : 24
             }}>
+
               {[
                 {
                   label: 'Total Students',
                   value: students.length,
-                  color: '#22d3ee', icon: '👥'
+                  color: '#22d3ee',
                 },
                 {
                   label: 'Sections',
@@ -175,17 +252,17 @@ export default function StudentsPage() {
                     students.map(s => s.section)
                       .filter(Boolean)
                   )].length,
-                  color: '#a78bfa', icon: '🏫'
+                  color: '#a78bfa',
                 },
                 {
                   label: 'Active',
                   value: students.filter(s => s.is_active).length,
-                  color: '#4ade80', icon: '✅'
+                  color: '#4ade80',
                 },
                 {
                   label: 'Search Results',
                   value: filtered.length,
-                  color: '#fbbf24', icon: '🔍'
+                  color: '#fbbf24',
                 }
               ].map(stat => (
                 <GlassCard key={stat.label} style={{ padding: 18 }}>
@@ -205,7 +282,7 @@ export default function StudentsPage() {
                     <span style={{ fontSize: 18 }}>{stat.icon}</span>
                   </div>
                   <p style={{
-                    fontSize:   28,
+                    fontSize:   isMobile ? 22 : 28,
                     fontWeight: 700,
                     color:      stat.color,
                     margin:     0
@@ -228,32 +305,97 @@ export default function StudentsPage() {
               </h2>
               <form onSubmit={handleCreate}>
                 <div style={{
-                  display:             'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap:                 16,
-                  marginBottom:        16
+                  display: 'grid',
+                  gridTemplateColumns: isMobile
+                    ? '1fr'
+                    : isTablet
+                      ? 'repeat(2, 1fr)'
+                      : '1fr 1fr',
+                  gap: isMobile ? 12 : 16,
+                  marginBottom: isMobile ? 12 : 16
                 }}>
+
                   <div>
                     <label style={labelStyle}>Student ID *</label>
+
                     <input
-                      style={inputStyle} required
+                      style={{
+                        ...inputStyle,
+                        borderColor: getStuError('student_id')
+                          ? 'rgba(248,113,113,0.7)'
+                          : isStuValid('student_id')
+                          ? 'rgba(74,222,128,0.6)'
+                          : 'rgba(103,232,249,0.25)'
+                      }}
+                      required
                       value={form.student_id}
-                      onChange={e => setForm({
-                        ...form, student_id: e.target.value
-                      })}
+                      onChange={e => {
+                        setForm({
+                          ...form,
+                          student_id: e.target.value
+                        })
+
+                        stuChange('student_id', e.target.value)
+                      }}
+                      onBlur={e =>
+                        stuBlur('student_id', e.target.value)
+                      }
                       placeholder="e.g. 2024-00006"
                     />
+
+                    {getStuError('student_id') && (
+                      <p style={{
+                        color: '#f87171',
+                        fontSize: 11,
+                        margin: '4px 0 0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4
+                      }}>
+                        ⚠ {getStuError('student_id')}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label style={labelStyle}>Full Name *</label>
+
                     <input
-                      style={inputStyle} required
+                      style={{
+                        ...inputStyle,
+                        borderColor: getStuError('name')
+                          ? 'rgba(248,113,113,0.7)'
+                          : isStuValid('name')
+                          ? 'rgba(74,222,128,0.6)'
+                          : 'rgba(103,232,249,0.25)'
+                      }}
+                      required
                       value={form.name}
-                      onChange={e => setForm({
-                        ...form, name: e.target.value
-                      })}
-                      placeholder="e.g. Juan dela Cruz"
+                      onChange={e => {
+                        setForm({
+                          ...form,
+                          name: e.target.value
+                        })
+
+                        stuChange('name', e.target.value)
+                      }}
+                      onBlur={e =>
+                        stuBlur('name', e.target.value)
+                      }
+                      placeholder="e.g. Juan Dela Cruz"
                     />
+
+                    {getStuError('name') && (
+                      <p style={{
+                        color: '#f87171',
+                        fontSize: 11,
+                        margin: '4px 0 0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4
+                      }}>
+                        ⚠ {getStuError('name')}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label style={labelStyle}>Section</label>
@@ -284,24 +426,46 @@ export default function StudentsPage() {
                       ))}
                     </select>
                   </div>
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={labelStyle}>
-                      Barcode * (printed on school ID)
-                    </label>
+                  <div>
+                    <label style={labelStyle}>Barcode *</label>
+
                     <input
-                      style={inputStyle} required
+                      style={{
+                        ...inputStyle,
+                        borderColor: getStuError('barcode')
+                          ? 'rgba(248,113,113,0.7)'
+                          : isStuValid('barcode')
+                          ? 'rgba(74,222,128,0.6)'
+                          : 'rgba(103,232,249,0.25)'
+                      }}
+                      required
                       value={form.barcode}
-                      onChange={e => setForm({
-                        ...form, barcode: e.target.value
-                      })}
-                      placeholder="e.g. BC2024006"
+                      onChange={e => {
+                        setForm({
+                          ...form,
+                          barcode: e.target.value
+                        })
+
+                        stuChange('barcode', e.target.value)
+                      }}
+                      onBlur={e =>
+                        stuBlur('barcode', e.target.value)
+                      }
+                      placeholder="e.g. STU-001"
                     />
-                    <p style={{
-                      color:    'rgba(186,230,253,0.35)',
-                      fontSize: 11, margin: '4px 0 0'
-                    }}>
-                      This is what gets scanned from the physical ID card
-                    </p>
+
+                    {getStuError('barcode') && (
+                      <p style={{
+                        color: '#f87171',
+                        fontSize: 11,
+                        margin: '4px 0 0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4
+                      }}>
+                        ⚠ {getStuError('barcode')}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -342,7 +506,6 @@ export default function StudentsPage() {
             </div>
           ) : filtered.length === 0 ? (
             <GlassCard style={{ textAlign: 'center', padding: 48 }}>
-              <p style={{ fontSize: 40, marginBottom: 12 }}>👥</p>
               <p style={{
                 color: '#e0f7ff', fontSize: 16,
                 fontWeight: 600, margin: '0 0 8px'
@@ -379,9 +542,13 @@ export default function StudentsPage() {
                 </span>
               </div>
 
-              <table style={{
-                width: '100%', borderCollapse: 'collapse'
-              }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{
+                  width: '100%', borderCollapse: 'collapse',
+                  minWidth: isMobile ? 640 : undefined
+                }}>
+
+
                 <thead>
                   <tr>
                     {['Student ID', 'Name', 'Section',
@@ -535,7 +702,9 @@ export default function StudentsPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </div>
+
             </GlassCard>
           )}
         </div>

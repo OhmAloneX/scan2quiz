@@ -1,32 +1,54 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import api from '../services/api'
+import { useValidation, rules } from '../hooks/useValidation'
+import FormInput from '../components/ui/FormInput'
+import api       from '../services/api'
 
 export default function RegisterPage() {
-  const navigate = useNavigate()
+  const navigate        = useNavigate()
   const [form, setForm] = useState({
-    name:     '',
-    email:    '',
-    password: '',
-    confirm:  ''
+    name: '', email: '', password: '', confirm: ''
   })
-  const [error,   setError]   = useState('')
-  const [success, setSuccess] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [serverError, setServerError] = useState('')
+  const [success,     setSuccess]     = useState('')
+  const [loading,     setLoading]     = useState(false)
+
+  // Dynamic schema so confirm can reference password value
+  const schema = {
+    name:     [
+      rules.required('Full name'),
+      rules.minLength(2, 'Full name'),
+      rules.maxLength(100, 'Full name')
+    ],
+    email:    [
+      rules.required('Email'),
+      rules.email()
+    ],
+    password: [
+      rules.required('Password'),
+      rules.password()
+    ],
+    confirm:  [
+      rules.required('Confirm password'),
+      rules.match(form.password, 'Passwords')
+    ]
+  }
+
+  const {
+    getError, isValid, handleBlur,
+    handleChange, validateAll
+  } = useValidation(schema)
+
+  function update(field, value) {
+    setForm(prev => ({ ...prev, [field]: value }))
+    handleChange(field, value)
+    setServerError('')
+  }
 
   async function handleRegister(e) {
     e.preventDefault()
-    setError('')
-    setSuccess('')
-
-    // Validate
-    if (form.password !== form.confirm) {
-      return setError('Passwords do not match')
-    }
-    if (form.password.length < 6) {
-      return setError('Password must be at least 6 characters')
-    }
-
+    setServerError('')
+    if (!validateAll(form)) return
     setLoading(true)
     try {
       await api.post('/auth/register', {
@@ -35,40 +57,15 @@ export default function RegisterPage() {
         password: form.password,
         role:     'teacher'
       })
-      setSuccess(
-        'Registration submitted! Your account is ' +
-        'pending admin approval. You will be notified ' +
-        'once your account is approved.'
-      )
-      // Don't redirect — let them read the message
+      setSuccess(true)
       setTimeout(() => navigate('/login'), 4000)
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed')
+      setServerError(
+        err.response?.data?.message || 'Registration failed'
+      )
     } finally {
       setLoading(false)
     }
-  }
-
-  const inputStyle = {
-    width:        '100%',
-    padding:      '13px 16px',
-    background:   'rgba(255,255,255,0.06)',
-    border:       '1px solid rgba(103,232,249,0.25)',
-    borderRadius: 12,
-    color:        '#e0f7ff',
-    fontSize:     14,
-    outline:      'none',
-    fontFamily:   'inherit',
-    boxSizing:    'border-box',
-    transition:   'border-color 0.2s, box-shadow 0.2s'
-  }
-
-  const labelStyle = {
-    display:      'block',
-    fontSize:     12,
-    color:        'rgba(186,230,253,0.6)',
-    marginBottom: 6,
-    fontWeight:   500
   }
 
   return (
@@ -80,27 +77,27 @@ export default function RegisterPage() {
       background:     'linear-gradient(135deg,' +
         '#060d1f 0%,#0a1628 50%,#0d1f3c 100%)',
       fontFamily:     "'Segoe UI',system-ui,sans-serif",
-      padding:        20
+      padding:        '24px 20px'
     }}>
       {/* Ambient blobs */}
       <div style={{
-        position:   'fixed', top: '10%', left: '15%',
-        width:      400,     height: 400,
-        borderRadius: '50%', pointerEvents: 'none',
+        position: 'fixed', top: '10%', left: '15%',
+        width: 400, height: 400, borderRadius: '50%',
         background: 'radial-gradient(circle,' +
-          'rgba(34,211,238,0.08) 0%,transparent 70%)'
+          'rgba(34,211,238,0.08) 0%,transparent 70%)',
+        pointerEvents: 'none'
       }}/>
       <div style={{
-        position:   'fixed', bottom: '10%', right: '10%',
-        width:      360,     height: 360,
-        borderRadius: '50%', pointerEvents: 'none',
+        position: 'fixed', bottom: '10%', right: '10%',
+        width: 360, height: 360, borderRadius: '50%',
         background: 'radial-gradient(circle,' +
-          'rgba(99,102,241,0.09) 0%,transparent 70%)'
+          'rgba(99,102,241,0.09) 0%,transparent 70%)',
+        pointerEvents: 'none'
       }}/>
 
       <div style={{ width: '100%', maxWidth: 460 }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{
             display:        'inline-flex',
             alignItems:     'center',
@@ -132,7 +129,8 @@ export default function RegisterPage() {
             </span>
           </div>
           <p style={{
-            color: 'rgba(186,230,253,0.45)', fontSize: 13, margin: 0
+            color: 'rgba(186,230,253,0.45)',
+            fontSize: 13, margin: 0
           }}>
             School Quiz Management System
           </p>
@@ -148,274 +146,204 @@ export default function RegisterPage() {
           boxShadow:            '0 8px 48px rgba(0,0,0,0.4)',
           padding:              '36px 32px'
         }}>
-          <h1 style={{
-            color: '#e0f7ff', fontSize: 22,
-            fontWeight: 600, margin: '0 0 4px'
-          }}>
-            Create Teacher Account
-          </h1>
-          <p style={{
-            color: 'rgba(186,230,253,0.5)',
-            fontSize: 13, margin: '0 0 24px'
-          }}>
-            Register to start creating and managing quizzes
-          </p>
 
-          {/* Error */}
-          {error && (
-            <div style={{
-              marginBottom: 16,
-              padding:      '12px 14px',
-              background:   'rgba(248,113,113,0.1)',
-              border:       '1px solid rgba(248,113,113,0.3)',
-              borderRadius: 12,
-              color:        '#f87171',
-              fontSize:     13
-            }}>
-              ❌ {error}
-            </div>
-          )}
-
-          {/* Success */}
-          {success && (
-            <div style={{
-              marginBottom: 16,
-              padding:      '16px',
-              background:   'rgba(74,222,128,0.08)',
-              border:       '1px solid rgba(74,222,128,0.3)',
-              borderRadius: 14,
-            }}>
+          {success ? (
+            /* Success state */
+            <div style={{ textAlign: 'center', padding: '16px 0' }}>
+              <div style={{
+                width:          72,
+                height:         72,
+                borderRadius:   '50%',
+                background:     'rgba(74,222,128,0.1)',
+                border:         '2px solid rgba(74,222,128,0.4)',
+                display:        'flex',
+                alignItems:     'center',
+                justifyContent: 'center',
+                margin:         '0 auto 20px',
+                fontSize:       32
+              }}>
+                
+              </div>
+              <h2 style={{
+                color: '#4ade80', fontSize: 20,
+                fontWeight: 600, margin: '0 0 8px'
+              }}>
+                Registration Submitted!
+              </h2>
               <p style={{
-                color:      '#4ade80',
-                fontSize:   15,
-                fontWeight: 600,
+                color:      '#e0f7ff',
+                fontSize:   14,
+                fontWeight: 500,
                 margin:     '0 0 8px'
               }}>
-                ✅ Registration Submitted!
+                Your account is pending admin approval
               </p>
               <p style={{
-                color:    'rgba(186,230,253,0.6)',
+                color:    'rgba(186,230,253,0.5)',
                 fontSize: 13,
-                margin:   0,
+                margin:   '0 0 20px',
                 lineHeight: 1.6
               }}>
-                Your account is <strong style={{ color: '#fbbf24' }}>
-                pending admin approval</strong>. An administrator
-                will review your account shortly.
-                You will be redirected to login in a moment.
+                An administrator will review your account shortly.
+                You will be redirected to the login page in a moment.
               </p>
+              <div style={{
+                height:       4,
+                borderRadius: 2,
+                background:   'rgba(255,255,255,0.08)',
+                overflow:     'hidden'
+              }}>
+                <div style={{
+                  height:     '100%',
+                  background: 'linear-gradient(90deg,#22d3ee,#6366f1)',
+                  borderRadius: 2,
+                  animation:  'shrink 4s linear forwards'
+                }}/>
+              </div>
+              <style>{`
+                @keyframes shrink {
+                  from { width: 100% }
+                  to   { width: 0%   }
+                }
+              `}</style>
             </div>
-          )}
+          ) : (
+            <>
+              <h1 style={{
+                color: '#e0f7ff', fontSize: 22,
+                fontWeight: 600, margin: '0 0 4px'
+              }}>
+                Create Teacher Account
+              </h1>
+              <p style={{
+                color: 'rgba(186,230,253,0.5)',
+                fontSize: 13, margin: '0 0 24px'
+              }}>
+                Register to start creating and managing quizzes
+              </p>
 
-          <form onSubmit={handleRegister}>
-            <div style={{
-              display: 'flex', flexDirection: 'column', gap: 16
-            }}>
-              {/* Full Name */}
-              <div>
-                <label style={labelStyle}>Full Name</label>
-                <input
-                  style={inputStyle}
-                  type="text"
-                  required
-                  placeholder="e.g. Ms. Santos"
-                  value={form.name}
-                  onChange={e => setForm({
-                    ...form, name: e.target.value
-                  })}
-                  onFocus={e => {
-                    e.target.style.borderColor =
-                      'rgba(34,211,238,0.7)'
-                    e.target.style.boxShadow =
-                      '0 0 0 3px rgba(34,211,238,0.1)'
-                  }}
-                  onBlur={e => {
-                    e.target.style.borderColor =
-                      'rgba(103,232,249,0.25)'
-                    e.target.style.boxShadow = 'none'
-                  }}
-                />
-              </div>
-
-              {/* Email */}
-              <div>
-                <label style={labelStyle}>School Email</label>
-                <input
-                  style={inputStyle}
-                  type="email"
-                  required
-                  placeholder="e.g. santos@school.edu"
-                  value={form.email}
-                  onChange={e => setForm({
-                    ...form, email: e.target.value
-                  })}
-                  onFocus={e => {
-                    e.target.style.borderColor =
-                      'rgba(34,211,238,0.7)'
-                    e.target.style.boxShadow =
-                      '0 0 0 3px rgba(34,211,238,0.1)'
-                  }}
-                  onBlur={e => {
-                    e.target.style.borderColor =
-                      'rgba(103,232,249,0.25)'
-                    e.target.style.boxShadow = 'none'
-                  }}
-                />
-              </div>
-
-              {/* Password */}
-              <div>
-                <label style={labelStyle}>Password</label>
-                <input
-                  style={inputStyle}
-                  type="password"
-                  required
-                  placeholder="Minimum 6 characters"
-                  value={form.password}
-                  onChange={e => setForm({
-                    ...form, password: e.target.value
-                  })}
-                  onFocus={e => {
-                    e.target.style.borderColor =
-                      'rgba(34,211,238,0.7)'
-                    e.target.style.boxShadow =
-                      '0 0 0 3px rgba(34,211,238,0.1)'
-                  }}
-                  onBlur={e => {
-                    e.target.style.borderColor =
-                      'rgba(103,232,249,0.25)'
-                    e.target.style.boxShadow = 'none'
-                  }}
-                />
-              </div>
-
-              {/* Confirm Password */}
-              <div>
-                <label style={labelStyle}>Confirm Password</label>
-                <input
-                  style={inputStyle}
-                  type="password"
-                  required
-                  placeholder="Re-enter your password"
-                  value={form.confirm}
-                  onChange={e => setForm({
-                    ...form, confirm: e.target.value
-                  })}
-                  onFocus={e => {
-                    e.target.style.borderColor =
-                      'rgba(34,211,238,0.7)'
-                    e.target.style.boxShadow =
-                      '0 0 0 3px rgba(34,211,238,0.1)'
-                  }}
-                  onBlur={e => {
-                    e.target.style.borderColor =
-                      'rgba(103,232,249,0.25)'
-                    e.target.style.boxShadow = 'none'
-                  }}
-                />
-                {/* Password match indicator */}
-                {form.confirm && (
-                  <p style={{
-                    fontSize: 11, margin: '4px 0 0',
-                    color: form.password === form.confirm
-                      ? '#4ade80' : '#f87171'
-                  }}>
-                    {form.password === form.confirm
-                      ? '✓ Passwords match'
-                      : '✗ Passwords do not match'}
-                  </p>
-                )}
-              </div>
-
-              {/* Password strength */}
-              {form.password && (
-                <div>
-                  <div style={{
-                    height:       4,
-                    borderRadius: 2,
-                    background:   'rgba(255,255,255,0.1)',
-                    marginBottom: 4
-                  }}>
-                    <div style={{
-                      height:     '100%',
-                      borderRadius: 2,
-                      transition: 'width 0.3s, background 0.3s',
-                      width: form.password.length < 6
-                        ? '25%'
-                        : form.password.length < 10
-                        ? '60%'
-                        : '100%',
-                      background: form.password.length < 6
-                        ? '#f87171'
-                        : form.password.length < 10
-                        ? '#fbbf24'
-                        : '#4ade80'
-                    }}/>
-                  </div>
-                  <p style={{
-                    fontSize: 11,
-                    color:    form.password.length < 6
-                      ? '#f87171'
-                      : form.password.length < 10
-                      ? '#fbbf24'
-                      : '#4ade80',
-                    margin: 0
-                  }}>
-                    {form.password.length < 6
-                      ? 'Weak password'
-                      : form.password.length < 10
-                      ? 'Good password'
-                      : 'Strong password'}
-                  </p>
+              {/* Server error */}
+              {serverError && (
+                <div style={{
+                  marginBottom: 20,
+                  padding:      '12px 14px',
+                  background:   'rgba(248,113,113,0.1)',
+                  border:       '1px solid rgba(248,113,113,0.3)',
+                  borderRadius: 12,
+                  display:      'flex',
+                  alignItems:   'center',
+                  gap:          8
+                }}>
+                  <span style={{ fontSize: 16 }}>⚠️</span>
+                  <span style={{ color: '#f87171', fontSize: 13 }}>
+                    {serverError}
+                  </span>
                 </div>
               )}
 
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  padding:      '14px',
-                  background:   'linear-gradient(135deg,' +
-                    'rgba(34,211,238,0.2),rgba(99,102,241,0.2))',
-                  border:       '1px solid rgba(34,211,238,0.45)',
-                  borderRadius: 14,
-                  color:        '#22d3ee',
-                  fontSize:     15,
-                  fontWeight:   600,
-                  cursor:       loading ? 'default' : 'pointer',
-                  fontFamily:   'inherit',
-                  marginTop:    4
+              <form onSubmit={handleRegister} noValidate>
+                <div style={{
+                  display:       'flex',
+                  flexDirection: 'column',
+                  gap:           18
                 }}>
-                {loading
-                  ? 'Creating account...'
-                  : 'Create Account →'}
-              </button>
-            </div>
-          </form>
+                  <FormInput
+                    label="Full Name"
+                    name="name"
+                    required
+                    value={form.name}
+                    error={getError('name')}
+                    isValid={isValid('name')}
+                    autoComplete="name"
+                    onChange={v => update('name', v)}
+                    onBlur={v => handleBlur('name', v)}
+                    hint="Your display name shown to students"
+                  />
 
-          {/* Link to login */}
-          <p style={{
-            textAlign: 'center',
-            color:     'rgba(186,230,253,0.4)',
-            fontSize:  13,
-            margin:    '20px 0 0'
-          }}>
-            Already have an account?{' '}
-            <Link to="/login" style={{
-              color:          '#22d3ee',
-              textDecoration: 'none',
-              fontWeight:     500
-            }}>
-              Sign in here
-            </Link>
-          </p>
+                  <FormInput
+                    label="School Email"
+                    name="email"
+                    type="email"
+                    required
+                    value={form.email}
+                    error={getError('email')}
+                    isValid={isValid('email')}
+                    autoComplete="email"
+                    onChange={v => update('email', v)}
+                    onBlur={v => handleBlur('email', v)}
+                  />
+
+                  <FormInput
+                    label="Password"
+                    name="password"
+                    type="password"
+                    required
+                    value={form.password}
+                    error={getError('password')}
+                    isValid={isValid('password')}
+                    autoComplete="new-password"
+                    showStrength
+                    onChange={v => update('password', v)}
+                    onBlur={v => handleBlur('password', v)}
+                  />
+
+                  <FormInput
+                    label="Confirm Password"
+                    name="confirm"
+                    type="password"
+                    required
+                    value={form.confirm}
+                    error={getError('confirm')}
+                    isValid={isValid('confirm')}
+                    autoComplete="new-password"
+                    onChange={v => update('confirm', v)}
+                    onBlur={v => handleBlur('confirm', v)}
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      padding:      '14px',
+                      background:   'linear-gradient(135deg,' +
+                        'rgba(34,211,238,0.2),rgba(99,102,241,0.2))',
+                      border:       '1px solid rgba(34,211,238,0.45)',
+                      borderRadius: 14,
+                      color:        '#22d3ee',
+                      fontSize:     15,
+                      fontWeight:   600,
+                      cursor:       loading ? 'default' : 'pointer',
+                      fontFamily:   'inherit',
+                      marginTop:    4
+                    }}>
+                    {loading
+                      ? 'Creating account...'
+                      : 'Create Account →'}
+                  </button>
+                </div>
+              </form>
+
+              <p style={{
+                textAlign: 'center',
+                color:     'rgba(186,230,253,0.4)',
+                fontSize:  13,
+                margin:    '20px 0 0'
+              }}>
+                Already have an account?{' '}
+                <Link to="/login" style={{
+                  color: '#22d3ee', textDecoration: 'none',
+                  fontWeight: 500
+                }}>
+                  Sign in here
+                </Link>
+              </p>
+            </>
+          )}
         </div>
 
-        {/* Note */}
         <p style={{
           textAlign: 'center',
-          color:     'rgba(186,230,253,0.25)',
+          color:     'rgba(186,230,253,0.2)',
           fontSize:  11,
           marginTop: 16
         }}>

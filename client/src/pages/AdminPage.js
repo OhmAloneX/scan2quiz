@@ -43,7 +43,7 @@ export default function AdminPage() {
     setActing(id)
     try {
       await api.patch(`/auth/users/${id}/approve`)
-      showMessage(`✅ ${name} has been approved`)
+      showMessage(`${name} has been approved`)
       loadUsers()
     } catch (err) {
       showMessage(
@@ -62,7 +62,7 @@ export default function AdminPage() {
     setActing(id)
     try {
       await api.patch(`/auth/users/${id}/reject`)
-      showMessage(`❌ ${name} has been rejected`, 'error')
+      showMessage(`${name} has been rejected`, 'error')
       loadUsers()
     } catch (err) {
       showMessage(
@@ -81,7 +81,7 @@ export default function AdminPage() {
     setActing(id)
     try {
       await api.delete(`/auth/users/${id}`)
-      showMessage(`🗑 ${name}'s account deleted`)
+      showMessage(`${name}'s account deleted`)
       loadUsers()
     } catch (err) {
       showMessage(
@@ -150,7 +150,7 @@ export default function AdminPage() {
               fontWeight: 600,
               margin:     0
             }}>
-              Admin Panel 🛡️
+              Admin Panel 
             </h1>
 
             <p style={{
@@ -216,25 +216,25 @@ export default function AdminPage() {
               label: 'Total Users',
               value: users.length,
               color: '#22d3ee',
-              icon:  '👥'
+              
             },
             {
               label: 'Pending',
               value: users.filter(u => u.status === 'pending').length,
               color: '#fbbf24',
-              icon:  '⏳'
+              
             },
             {
               label: 'Active',
               value: users.filter(u => u.status === 'active').length,
               color: '#4ade80',
-              icon:  '✅'
+              
             },
             {
               label: 'Rejected',
               value: users.filter(u => u.status === 'rejected').length,
               color: '#f87171',
-              icon:  '❌'
+              
             }
           ].map(stat => (
             <GlassCard key={stat.label} style={{ padding: 18 }}>
@@ -532,9 +532,9 @@ export default function AdminPage() {
                             borderRadius: 20,
                             ...ss
                           }}>
-                            {u.status === 'pending'  ? '⏳ Pending'  : ''}
-                            {u.status === 'active'   ? '✅ Active'   : ''}
-                            {u.status === 'rejected' ? '❌ Rejected' : ''}
+                            {u.status === 'pending'  ? 'Pending'  : ''}
+                            {u.status === 'active'   ? 'Active'   : ''}
+                            {u.status === 'rejected' ? 'Rejected' : ''}
                           </span>
                         </td>
 
@@ -577,7 +577,7 @@ export default function AdminPage() {
                                   fontFamily:   'inherit'
                                 }}>
                                 {acting === u.id
-                                  ? '...' : '✅ Approve'}
+                                  ? '...' : 'Approve'}
                               </button>
                             )}
 
@@ -599,7 +599,7 @@ export default function AdminPage() {
                                   fontFamily:   'inherit'
                                 }}>
                                 {acting === u.id
-                                  ? '...' : '❌ Reject'}
+                                  ? '...' : 'Reject'}
                               </button>
                             )}
 

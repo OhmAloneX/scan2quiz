@@ -2,14 +2,19 @@ import { useState, useEffect } from 'react'
 import { } from 'react-router-dom'
 import Sidebar            from '../components/layout/Sidebar'
 import GlassCard          from '../components/ui/GlassCard'
+import useResponsive       from '../hooks/useResponsive'
+
 import {
   getQuizzes, createQuiz, deleteQuiz, addQuestion
 } from '../services/quizService'
 import { createSession }  from '../services/sessionService'
+import { useValidation, rules } from '../hooks/useValidation'
 
 export default function QuizzesPage() {
   
+  const { isMobile, isTablet } = useResponsive()
   const [quizzes,   setQuizzes]   = useState([])
+
   const [loading,   setLoading]   = useState(true)
   const [showForm,  setShowForm]  = useState(false)
   const [showQForm, setShowQForm] = useState(null)
@@ -28,6 +33,31 @@ export default function QuizzesPage() {
     ]
   })
 
+  const quizSchema = {
+  title: [
+    rules.required('Title'),
+    rules.minLength(3, 'Title'),
+    rules.maxLength(200, 'Title')
+  ],
+  time_limit: [
+    rules.positiveNumber('Time limit'),
+    rules.range(1, 300, 'Time limit')
+  ],
+  passing_score: [
+    rules.positiveNumber('Passing score'),
+    rules.range(1, 100, 'Passing score')
+  ],
+}
+
+const {
+  getError: getQuizError,
+  isValid:  isQuizValid,
+  handleBlur:   quizBlur,
+  handleChange: quizChange,
+  validateAll:  validateQuiz,
+  reset:        resetQuiz
+} = useValidation(quizSchema)
+
   useEffect(() => { loadQuizzes() }, [])
 
   async function loadQuizzes() {
@@ -43,13 +73,24 @@ export default function QuizzesPage() {
 
   async function handleCreateQuiz(e) {
     e.preventDefault()
+
+    if (!validateQuiz(form)) return
+
     try {
       await createQuiz(form)
+
       setShowForm(false)
+
+      resetQuiz()
+
       setForm({
-        title: '', description: '', subject: '',
-        time_limit: 30, passing_score: 75
+        title: '',
+        description: '',
+        subject: '',
+        time_limit: 30,
+        passing_score: 75
       })
+
       loadQuizzes()
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to create quiz')
@@ -129,18 +170,26 @@ export default function QuizzesPage() {
       <div style={{ flex: 1, overflow: 'auto' }}>
         {/* Top bar */}
         <div style={{
-          padding:      '16px 28px',
+          padding:      isMobile
+            ? '12px 14px'
+            : isTablet
+              ? '16px 18px'
+              : '16px 28px',
           background:   'rgba(255,255,255,0.03)',
           backdropFilter: 'blur(16px)',
           borderBottom: '1px solid rgba(103,232,249,0.08)',
           display:      'flex',
           alignItems:   'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          gap:           isMobile ? 12 : 0,
+          flexDirection: isMobile ? 'column' : 'row'
         }}>
           <div>
             <h1 style={{
-              color: '#e0f7ff', fontSize: 20,
-              fontWeight: 600, margin: 0
+              color: '#e0f7ff',
+              fontSize: isMobile ? 18 : 20,
+              fontWeight: 600,
+              margin: 0
             }}>
               Quizzes
             </h1>
@@ -151,22 +200,24 @@ export default function QuizzesPage() {
               Create and manage your quizzes
             </p>
           </div>
-          <button onClick={() => setShowForm(true)} style={{
-            padding:      '10px 20px',
+              <button onClick={() => setShowForm(true)} style={{
+            padding:      isMobile ? '9px 16px' : '10px 20px',
             background:   'linear-gradient(135deg,' +
               'rgba(34,211,238,0.2),rgba(99,102,241,0.2))',
             border:       '1px solid rgba(34,211,238,0.45)',
             borderRadius: 12,
             color:        '#22d3ee',
-            fontSize:     14,
+            fontSize:     isMobile ? 13 : 14,
             fontWeight:   600,
-            cursor:       'pointer'
+            cursor:       'pointer',
+            whiteSpace:   'nowrap'
           }}>
             + New Quiz
           </button>
         </div>
 
-        <div style={{ padding: '24px 28px' }}>
+        <div style={{ padding: isMobile ? '16px 14px' : isTablet ? '20px 18px' : '24px 28px' }}>
+
 
           {/* Create Quiz Form */}
           {showForm && (
@@ -180,18 +231,53 @@ export default function QuizzesPage() {
               <form onSubmit={handleCreateQuiz}>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: 16, marginBottom: 16
+                  gridTemplateColumns: isMobile
+                    ? '1fr'
+                    : isTablet
+                      ? 'repeat(2, 1fr)'
+                      : '1fr 1fr',
+                  gap: isMobile ? 12 : 16,
+                  marginBottom: isMobile ? 12 : 16
                 }}>
                   <div>
                     <label style={labelStyle}>Title *</label>
-                    <input style={inputStyle} required
+                    <input
+                      style={{
+                        ...inputStyle,
+                        borderColor: getQuizError('title')
+                          ? 'rgba(248,113,113,0.7)'
+                          : isQuizValid('title')
+                          ? 'rgba(74,222,128,0.6)'
+                          : 'rgba(103,232,249,0.25)'
+                      }}
+                      required
                       value={form.title}
-                      onChange={e => setForm({
-                        ...form, title: e.target.value
-                      })}
+                      onChange={e => {
+                        setForm({
+                          ...form,
+                          title: e.target.value
+                        })
+
+                        quizChange('title', e.target.value)
+                      }}
+                      onBlur={e =>
+                        quizBlur('title', e.target.value)
+                      }
                       placeholder="e.g. CS101 Midterm"
                     />
+
+                    {getQuizError('title') && (
+                      <p style={{
+                        color: '#f87171',
+                        fontSize: 11,
+                        margin: '4px 0 0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4
+                      }}>
+                        ⚠ {getQuizError('title')}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label style={labelStyle}>Subject</label>
@@ -287,11 +373,13 @@ export default function QuizzesPage() {
             }}>
               {quizzes.map(quiz => (
                 <GlassCard key={quiz.id}>
-                  <div style={{
-                    display:        'flex',
-                    justifyContent: 'space-between',
-                    alignItems:     'flex-start'
-                  }}>
+                    <div style={{
+                      display:        'flex',
+                      justifyContent: 'space-between',
+                      alignItems:     'flex-start',
+                      flexDirection: isMobile ? 'column' : 'row',
+                      gap:            isMobile ? 12 : 0
+                    }}>
                     <div style={{ flex: 1 }}>
                       <div style={{
                         display: 'flex', alignItems: 'center',
@@ -345,7 +433,11 @@ export default function QuizzesPage() {
 
                     {/* Action buttons */}
                     <div style={{
-                      display: 'flex', gap: 8, flexShrink: 0
+                      display: 'flex',
+                      gap: isMobile ? 8 : 8,
+                      flexShrink: 0,
+                      flexWrap: isMobile ? 'wrap' : 'nowrap',
+                      width: isMobile ? '100%' : 'auto'
                     }}>
                       <button
                         onClick={() => setShowQForm(
@@ -428,8 +520,13 @@ export default function QuizzesPage() {
 
                         <div style={{
                           display: 'grid',
-                          gridTemplateColumns: '1fr 1fr',
-                          gap: 12, marginBottom: 12
+                          gridTemplateColumns: isMobile
+                            ? '1fr'
+                            : isTablet
+                              ? 'repeat(2, 1fr)'
+                              : '1fr 1fr',
+                          gap: isMobile ? 10 : 12,
+                          marginBottom: isMobile ? 10 : 12
                         }}>
                           <div>
                             <label style={labelStyle}>Type</label>
@@ -638,8 +735,8 @@ export default function QuizzesPage() {
             }}>
                 <img src={qrModal.qrImage} alt="QR Code"
                     style={{
-                        width:        200,
-                        height:       200,
+                        width:        isMobile ? 170 : 200,
+                        height:       isMobile ? 170 : 200,
                         borderRadius: 12,
                         display:      'block',
                         margin:       '0 auto'
@@ -663,9 +760,12 @@ export default function QuizzesPage() {
                 Session Code
               </p>
               <p style={{
-                color: '#22d3ee', fontSize: 28,
-                fontWeight: 700, margin: 0,
-                fontFamily: 'monospace', letterSpacing: 4
+                color: '#22d3ee',
+                fontSize: isMobile ? 22 : 28,
+                fontWeight: 700,
+                margin: 0,
+                fontFamily: 'monospace',
+                letterSpacing: 4
               }}>
                 {qrModal.sessionCode}
               </p>

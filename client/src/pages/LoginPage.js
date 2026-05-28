@@ -1,189 +1,249 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import api from '../services/api'
+import { useNavigate, Link } from 'react-router-dom'
+import { useAuth }       from '../context/AuthContext'
+import { useValidation, rules } from '../hooks/useValidation'
+import FormInput         from '../components/ui/FormInput'
+import api               from '../services/api'
+
+// Validation schema for login
+const schema = {
+  email:    [rules.required('Email'), rules.email()],
+  password: [rules.required('Password'), rules.passwordSimple()]
+}
 
 export default function LoginPage() {
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
-  const [error,    setError]    = useState('')
-  const [loading,  setLoading]  = useState(false)
-  const { login } = useAuth()
-  const navigate  = useNavigate()
+  const navigate        = useNavigate()
+  const { login }       = useAuth()
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [serverError, setServerError] = useState('')
+  const [loading, setLoading]         = useState(false)
 
-  const handleLogin = async (e) => {
+  const {
+    getError, isValid, handleBlur,
+    handleChange, validateAll
+  } = useValidation(schema)
+
+  function update(field, value) {
+    setForm(prev => ({ ...prev, [field]: value }))
+    handleChange(field, value)
+    setServerError('')
+  }
+
+  async function handleLogin(e) {
     e.preventDefault()
-    setError('')
+    setServerError('')
+    if (!validateAll(form)) return
     setLoading(true)
     try {
-      const res = await api.post('/auth/login', { email, password })
+      const res = await api.post('/auth/login', {
+        email:    form.email,
+        password: form.password
+      })
       login(res.data.token)
       navigate('/dashboard')
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed')
+      setServerError(
+        err.response?.data?.message || 'Login failed'
+      )
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center"
-      style={{ background:
-        'linear-gradient(135deg, #060d1f 0%, #0a1628 50%, #0d1f3c 100%)'
-      }}>
+    <div style={{
+      minHeight:      '100vh',
+      display:        'flex',
+      alignItems:     'center',
+      justifyContent: 'center',
+      background:     'linear-gradient(135deg,' +
+        '#060d1f 0%,#0a1628 50%,#0d1f3c 100%)',
+      fontFamily:     "'Segoe UI',system-ui,sans-serif",
+      padding:        20
+    }}>
+      {/* Ambient blobs */}
+      <div style={{
+        position:   'fixed', top: '10%', left: '15%',
+        width: 400, height: 400, borderRadius: '50%',
+        background: 'radial-gradient(circle,' +
+          'rgba(34,211,238,0.08) 0%,transparent 70%)',
+        pointerEvents: 'none'
+      }}/>
+      <div style={{
+        position:   'fixed', bottom: '10%', right: '10%',
+        width: 360, height: 360, borderRadius: '50%',
+        background: 'radial-gradient(circle,' +
+          'rgba(99,102,241,0.09) 0%,transparent 70%)',
+        pointerEvents: 'none'
+      }}/>
 
-      {/* Ambient glow blobs */}
-      <div className="absolute top-20 left-40 w-96 h-96 rounded-full"
-        style={{ background:
-          'radial-gradient(circle, rgba(34,211,238,0.1) 0%, transparent 70%)'
-        }}/>
-      <div className="absolute bottom-20 right-40 w-80 h-80 rounded-full"
-        style={{ background:
-          'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)'
-        }}/>
-
-      {/* Login card */}
-      <div className="relative w-full max-w-md mx-4 p-10 rounded-3xl"
-        style={{
-          background:       'rgba(255,255,255,0.06)',
-          backdropFilter:   'blur(24px)',
-          border:           '1px solid rgba(103,232,249,0.2)',
-          boxShadow:        '0 8px 48px rgba(0,0,0,0.4)'
-        }}>
-
+      <div style={{ width: '100%', maxWidth: 440 }}>
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl flex items-center
-              justify-center text-white font-bold text-lg"
-              style={{ background:
-                'linear-gradient(135deg, #22d3ee, #6366f1)',
-                boxShadow: '0 0 20px rgba(34,211,238,0.4)'
-              }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{
+            display:        'inline-flex',
+            alignItems:     'center',
+            gap:            10,
+            marginBottom:   8
+          }}>
+            <div style={{
+              width:          44,
+              height:         44,
+              borderRadius:   14,
+              background:     'linear-gradient(135deg,#22d3ee,#6366f1)',
+              display:        'flex',
+              alignItems:     'center',
+              justifyContent: 'center',
+              fontWeight:     700,
+              color:          '#0f172a',
+              fontSize:       20,
+              boxShadow:      '0 0 20px rgba(34,211,238,0.4)'
+            }}>
               S
             </div>
-            <span className="text-2xl font-bold text-sky-100"
-              style={{ fontFamily: 'monospace' }}>
+            <span style={{
+              fontFamily: 'monospace',
+              fontSize:   22,
+              fontWeight: 700,
+              color:      '#e0f7ff'
+            }}>
               Scan<span style={{ color: '#22d3ee' }}>2</span>Quiz
             </span>
           </div>
-          <p style={{ color: 'rgba(186,230,253,0.5)', fontSize: 13 }}>
-            Quiz Management System
+          <p style={{
+            color:   'rgba(186,230,253,0.45)',
+            fontSize: 13, margin: 0
+          }}>
+            School Quiz Management System
           </p>
         </div>
 
-        {/* Heading */}
-        <div className="text-center">
-          <h1 className="text-xl font-semibold text-sky-100 mb-1">
+        {/* Card */}
+        <div style={{
+          background:           'rgba(255,255,255,0.055)',
+          backdropFilter:       'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border:               '1px solid rgba(103,232,249,0.18)',
+          borderRadius:         28,
+          boxShadow:            '0 8px 48px rgba(0,0,0,0.4)',
+          padding:              '36px 32px'
+        }}>
+          <h1 style={{
+            color: '#e0f7ff', fontSize: 22,
+            fontWeight: 600, margin: '0 0 4px'
+          }}>
             Welcome back
           </h1>
-        </div>
-
-        {/* Error message */}
-        {error && (
-          <div className="mb-4 p-3 rounded-xl text-sm"
-            style={{
-              background: 'rgba(248,113,113,0.1)',
-              border:     '1px solid rgba(248,113,113,0.3)',
-              color:      '#f87171'
-            }}>
-            {error}
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleLogin} className="space-y-4">
-          {/* Email */}
-          <div>
-            <label className="block text-sm mb-1"
-              style={{ color: 'rgba(186,230,253,0.6)' }}>
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-xl text-sky-100
-                placeholder-sky-200/30 outline-none transition-all"
-              style={{
-                background:   'rgba(255,255,255,0.06)',
-                border:       '1px solid rgba(103,232,249,0.25)',
-                fontSize:     14
-              }}
-              onFocus={e => {
-                e.target.style.borderColor = 'rgba(34,211,238,0.7)'
-                e.target.style.boxShadow   =
-                  '0 0 0 3px rgba(34,211,238,0.1)'
-              }}
-              onBlur={e => {
-                e.target.style.borderColor = 'rgba(103,232,249,0.25)'
-                e.target.style.boxShadow   = 'none'
-              }}
-            />
-          </div>
-
-          {/* Password */}
-          <div>
-            <label className="block text-sm mb-1"
-              style={{ color: 'rgba(186,230,253,0.6)' }}>
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-xl text-sky-100
-                placeholder-sky-200/30 outline-none transition-all"
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-                border:     '1px solid rgba(103,232,249,0.25)',
-                fontSize:   14
-              }}
-              onFocus={e => {
-                e.target.style.borderColor = 'rgba(34,211,238,0.7)'
-                e.target.style.boxShadow   =
-                  '0 0 0 3px rgba(34,211,238,0.1)'
-              }}
-              onBlur={e => {
-                e.target.style.borderColor = 'rgba(103,232,249,0.25)'
-                e.target.style.boxShadow   = 'none'
-              }}
-            />
-          </div>
-
-          {/* Submit button */}
-          <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-3 rounded-xl font-semibold
-              transition-all duration-200 mt-2"
-          style={{
-            background: 'linear-gradient(135deg,' +
-              'rgba(34,211,238,0.2),rgba(99,102,241,0.2))',
-            border:    '1px solid rgba(34,211,238,0.45)',
-            color:     '#22d3ee',
-            fontSize:  15
-          }}
-        >
-          {loading ? 'Signing in...' : 'Sign In →'}
-        </button>
-
-        {/* Create account (teacher) */}
-        <div style={{ textAlign: 'center', marginTop: 14 }}>
           <p style={{
-            color: 'rgba(186,230,253,0.4)', fontSize: 13, margin: 0
+            color: 'rgba(186,230,253,0.5)',
+            fontSize: 13, margin: '0 0 24px'
           }}>
-            New teacher?{' '}
-            <a href="/register" style={{
-              color: '#22d3ee', textDecoration: 'none', fontWeight: 500
-            }}>
-              Create an account
-            </a>
+            Sign in to access your dashboard
           </p>
+
+          {/* Server error */}
+          {serverError && (
+            <div style={{
+              marginBottom: 20,
+              padding:      '12px 14px',
+              background:   'rgba(248,113,113,0.1)',
+              border:       '1px solid rgba(248,113,113,0.3)',
+              borderRadius: 12,
+              display:      'flex',
+              alignItems:   'center',
+              gap:          8
+            }}>
+              <span style={{ fontSize: 16 }}>⚠️</span>
+              <span style={{ color: '#f87171', fontSize: 13 }}>
+                {serverError}
+              </span>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} noValidate>
+            <div style={{
+              display:       'flex',
+              flexDirection: 'column',
+              gap:           18
+            }}>
+              <FormInput
+                label="Email Address"
+                name="email"
+                type="email"
+                required
+                value={form.email}
+                error={getError('email')}
+                isValid={isValid('email')}
+                autoComplete="email"
+                onChange={v => update('email', v)}
+                onBlur={v => handleBlur('email', v)}
+              />
+
+              <FormInput
+                label="Password"
+                name="password"
+                type="password"
+                required
+                value={form.password}
+                error={getError('password')}
+                isValid={isValid('password')}
+                autoComplete="current-password"
+                onChange={v => update('password', v)}
+                onBlur={v => handleBlur('password', v)}
+              />
+
+              {/* Forgot password link */}
+              <div style={{ textAlign: 'right', marginTop: -10 }}>
+                <span style={{
+                  color:    '#22d3ee',
+                  fontSize: 12,
+                  cursor:   'pointer'
+                }}>
+                  Forgot password?
+                </span>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding:      '14px',
+                  background:   'linear-gradient(135deg,' +
+                    'rgba(34,211,238,0.2),rgba(99,102,241,0.2))',
+                  border:       '1px solid rgba(34,211,238,0.45)',
+                  borderRadius: 14,
+                  color:        '#22d3ee',
+                  fontSize:     15,
+                  fontWeight:   600,
+                  cursor:       loading ? 'default' : 'pointer',
+                  fontFamily:   'inherit',
+                  marginTop:    4
+                }}>
+                {loading ? 'Signing in...' : 'Sign In →'}
+              </button>
+            </div>
+          </form>
+
+          <div style={{ textAlign: 'center', marginTop: 20 }}>
+            <p style={{
+              color:   'rgba(186,230,253,0.35)',
+              fontSize: 11, margin: '0 0 8px'
+            }}>
+            </p>
+            <p style={{
+              color: 'rgba(186,230,253,0.4)',
+              fontSize: 13, margin: 0
+            }}>
+              New teacher?{' '}
+              <Link to="/register" style={{
+                color: '#22d3ee', textDecoration: 'none',
+                fontWeight: 500
+              }}>
+                Create an account
+              </Link>
+            </p>
+          </div>
         </div>
-      </form>
       </div>
     </div>
   )

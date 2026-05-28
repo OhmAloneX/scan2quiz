@@ -5,13 +5,17 @@ import StatCard      from '../components/ui/StatCard'
 import GlassCard     from '../components/ui/GlassCard'
 import { getDashboard, getTrend } from '../services/analyticsService'
 import { getSessions }            from '../services/sessionService'
+import useResponsive from '../hooks/useResponsive'
+
 
 export default function DashboardPage() {
   const { user }                    = useAuth()
+  const { isMobile, isTablet }     = useResponsive()
   const [stats,    setStats]        = useState(null)
   const [trend,    setTrend]        = useState([])
   const [sessions, setSessions]     = useState([])
   const [loading,  setLoading]      = useState(true)
+
 
   useEffect(() => {
     async function load() {
@@ -60,7 +64,7 @@ export default function DashboardPage() {
               fontWeight: 600,
               margin:     0
             }}>
-              Hi, {user?.email?.split('@')[0]} 👋
+              Hi, {user?.email?.split('@')[0]} !
             </h1>
             <p style={{
               color:    'rgba(186,230,253,0.5)',
@@ -88,7 +92,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Body */}
-        <div style={{ padding: '24px 28px' }}>
+        <div style={{ padding: isMobile ? '16px 14px' : isTablet ? '20px 18px' : '24px 28px' }}>
+
           {loading ? (
             <div style={{
               display:        'flex',
@@ -105,38 +110,42 @@ export default function DashboardPage() {
               {/* Stat cards */}
               <div style={{
                 display:             'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap:                 16,
-                marginBottom:        24
+                gridTemplateColumns: isMobile
+                  ? '1fr'
+                  : isTablet
+                    ? 'repeat(2, 1fr)'
+                    : 'repeat(4, 1fr)',
+                gap:                 isMobile ? 12 : 16,
+                marginBottom:        isMobile ? 18 : 24
               }}>
+
                 <StatCard
                   label="Total Quizzes"
                   value={stats?.total_quizzes ?? 0}
                   sub="All time"
-                  accent="#22d3ee"
-                  icon="📋"
+                  
+                  
                 />
                 <StatCard
                   label="Total Sessions"
                   value={stats?.total_sessions ?? 0}
                   sub="All time"
-                  accent="#6366f1"
-                  icon="🔳"
+                  
+                  
                 />
                 <StatCard
                   label="Avg Score"
                   value={stats?.avg_score
                     ? `${stats.avg_score}%` : '—'}
                   sub="Across all attempts"
-                  accent="#4ade80"
-                  icon="📊"
+                  
+                  
                 />
                 <StatCard
                   label="Students"
                   value={stats?.unique_students ?? 0}
                   sub="Unique participants"
-                  accent="#a78bfa"
-                  icon="👥"
+                  
                 />
               </div>
 
@@ -146,7 +155,9 @@ export default function DashboardPage() {
                   display:        'flex',
                   justifyContent: 'space-between',
                   alignItems:     'center',
-                  marginBottom:   18
+                  marginBottom:   18,
+                  gap:             isMobile ? 12 : 16,
+                  flexWrap:       isMobile ? 'wrap' : 'nowrap'
                 }}>
                   <h2 style={{
                     color:      '#e0f7ff',
@@ -167,8 +178,9 @@ export default function DashboardPage() {
                 {sessions.length === 0 ? (
                   <div style={{
                     textAlign: 'center',
-                    padding:   '32px 0'
+                    padding:   isMobile ? '24px 0' : '32px 0'
                   }}>
+
                     <p style={{
                       color:    'rgba(186,230,253,0.4)',
                       fontSize: 14
@@ -178,10 +190,17 @@ export default function DashboardPage() {
                     </p>
                   </div>
                 ) : (
-                  <table style={{
-                    width:           '100%',
-                    borderCollapse:  'collapse'
+                  <div style={{
+                    width:      '100%',
+                    overflowX: 'auto'
                   }}>
+                    <table style={{
+                      width:           '100%',
+                      borderCollapse:  'collapse',
+                      minWidth:        isMobile ? 420 : 0,
+                      tableLayout:    'auto'
+                    }}>
+
                     <thead>
                       <tr>
                         {['Quiz', 'Code', 'Attempts',
@@ -244,7 +263,7 @@ export default function DashboardPage() {
                                 ? '#4ade80'
                                 : '#a5b4fc',
                               border: `1px solid ${s.status === 'open'
-                                ? 'rgba(74,222,128,0.3)'
+                            ? 'rgba(74,222,128,0.3)'
                                 : 'rgba(165,180,252,0.3)'}`
                             }}>
                               {s.status}
@@ -261,8 +280,10 @@ export default function DashboardPage() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                    </table>
+                  </div>
                 )}
+
               </GlassCard>
 
               {/* Trend data */}

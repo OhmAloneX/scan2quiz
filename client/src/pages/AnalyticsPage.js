@@ -174,31 +174,27 @@ export default function AnalyticsPage() {
                   label="Total Attempts"
                   value={stats?.total_attempts ?? 0}
                   sub="All sessions"
-                  accent="#22d3ee"
-                  icon="✏️"
+                  
                 />
                 <StatCard
                   label="Average Score"
                   value={stats?.avg_score
                     ? `${stats.avg_score}%` : '—'}
                   sub="Across all quizzes"
-                  accent="#4ade80"
-                  icon="📊"
+                  
                 />
                 <StatCard
                   label="Highest Score"
                   value={stats?.highest_score
                     ? `${stats.highest_score}%` : '—'}
                   sub="Best performance"
-                  accent="#fbbf24"
-                  icon="🏆"
+                  
                 />
                 <StatCard
                   label="Unique Students"
                   value={stats?.unique_students ?? 0}
                   sub="Participated"
-                  accent="#a78bfa"
-                  icon="👥"
+                  
                 />
               </div>
 
