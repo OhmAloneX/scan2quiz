@@ -11,5 +11,6 @@ router.put   ('/:id',                     ctrl.update)
 router.delete('/:id',                     ctrl.remove)
 router.post  ('/:id/questions',           ctrl.addQuestion)
 router.delete('/:id/questions/:questionId', ctrl.deleteQuestion)
+router.put   ('/:id/questions/:questionId', ctrl.updateQuestion)
 
 module.exports = router

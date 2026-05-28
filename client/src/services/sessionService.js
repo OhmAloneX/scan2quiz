@@ -8,3 +8,5 @@ export const joinSession   = (id)          => api.post(`/sessions/${id}/join`)
 export const getQuestions  = (id)          => api.get(`/attempts/${id}/questions`)
 export const submitAttempt = (id, answers) => api.post(`/attempts/${id}/submit`, { answers })
 export const getResult     = (id)          => api.get(`/attempts/${id}/result`)
+export const fetchParticipants = (sessionId) => api.get(`/session/${sessionId}/students`)
+

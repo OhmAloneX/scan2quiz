@@ -53,7 +53,7 @@ const close = asyncHandler(async (req, res) => {
 
 
 const handleScan = asyncHandler(async (req, res) => {
-  const { type, value } = req.body
+const { type, value, sessionCode, sessionId } = req.body
   if (!type || !value) {
     return res.status(400).json({
       success: false, message: 'type and value required'
@@ -61,7 +61,7 @@ const handleScan = asyncHandler(async (req, res) => {
   }
 
   try {
-    const result = await sessionService.handleScan(type, value)
+    const result = await sessionService.handleScan(type, value, { sessionCode, sessionId })
 
     if (type === 'QR_CODE') {
       auditService.logEvent({
@@ -159,7 +159,14 @@ const getResult = asyncHandler(async (req, res) => {
   res.json({ success: true, data: result })
 })
 
+const getStudents = asyncHandler(async (req, res) => {
+  const sessionId = +req.params.sessionId
+  const students = await sessionService.getSessionParticipants(sessionId)
+  res.json({ success: true, students })
+})
+
 module.exports = {
   create, list, close, handleScan,
-  join, getQuestions, submit, getResult
+  join, getQuestions, submit, getResult,
+  getStudents
 }

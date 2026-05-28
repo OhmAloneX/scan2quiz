@@ -104,7 +104,33 @@ const deleteQuestion = asyncHandler(async (req, res) => {
 })
 
 
+const updateQuestion = asyncHandler(async (req, res) => {
+  const quizId = +req.params.id
+  const questionId = +req.params.questionId
+
+  const q = await quizService.updateQuestion(
+    quizId,
+    questionId,
+    req.user.id,
+    req.body
+  )
+
+  auditService.logEvent({
+    req,
+    actionType: 'QUESTION_UPDATED',
+    module: 'quiz',
+    severity: 'info',
+    description: 'Question updated',
+    targetType: 'question',
+    targetId: String(q.id)
+  })
+
+  res.json({ success: true, data: q })
+})
+
 module.exports = {
   getAll, getOne, create, update,
-  remove, addQuestion, deleteQuestion
+  remove, addQuestion, deleteQuestion, updateQuestion
 }
+
+

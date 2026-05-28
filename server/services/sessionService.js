@@ -35,12 +35,10 @@ async function createSession(quizId, teacherId) {
   const sessionCode = makeSessionCode()
   const localIP     = getLocalIP()
 
-  // QR payload — opens join page on student phone
-  const joinUrl =
-    `http://${localIP}:3000/join` +
-    `?token=${qrToken}` +
-    `&code=${sessionCode}` +
-    `&quiz=${encodeURIComponent(quiz.title)}`
+  // QR payload — students join by session code (LAN IP)
+  // Required format: http://LOCAL_IP:3000/join/SESSION_CODE
+  const joinUrl = `http://${localIP}:3000/join/${sessionCode}?token=${qrToken}`
+
 
   const qrImage = await QRCode.toDataURL(joinUrl, {
     width:                300,
@@ -114,7 +112,35 @@ async function closeSession(sessionId, teacherId) {
 }
 
 // ── Handle QR or barcode scan ──────────────────────────
-async function handleScan(type, value) {
+async function getSessionParticipants(sessionId) {
+  // For teacher UI: returns student + attendance status + join time (attempt.started_at)
+  // Spec: include attempt id as `id`, use `student_id`, `full_name`, `joined_at`, `attendance_status`
+  const participants = await query(
+    `SELECT
+       a.id               AS id,
+       s.student_id       AS student_id,
+       CONCAT(s.name)     AS full_name,
+       a.started_at       AS joined_at,
+       a.status           AS attendance_status
+     FROM attempts a
+     JOIN students s ON s.id = a.student_id
+     WHERE a.session_id = ?
+     ORDER BY a.started_at DESC`,
+    [sessionId]
+  )
+
+  // Ensure shape matches response contract
+  return participants.map(p => ({
+    id: p.id,
+    student_id: p.student_id,
+    full_name: p.full_name,
+    joined_at: p.joined_at,
+    attendance_status: p.attendance_status,
+  }))
+}
+
+
+async function handleScan(type, value, ctx = {}) {
   if (type === 'QR_CODE') {
     let token
 
@@ -146,12 +172,102 @@ async function handleScan(type, value) {
   }
 
   if (type === 'barcode') {
+    const { sessionCode, sessionId } = ctx || {}
+
+    if (!sessionCode && !sessionId) {
+      throw { status: 400, message: 'Missing sessionCode or sessionId for barcode scan' }
+    }
+
+    // IMPORTANT: Prevent confusion between QR token and teacher scan sessionCode.
+    // We'll always register attendance against the selected active session.
+
+
+    // Validate session is open
+    let session
+    if (sessionId) {
+      const rows = await query(
+        `SELECT s.*, q.title AS quiz_title, q.time_limit
+         FROM sessions s
+         JOIN quizzes q ON q.id = s.quiz_id
+         WHERE s.id = ?`,
+        [sessionId]
+      )
+      session = rows[0]
+    } else {
+      const rows = await query(
+        `SELECT s.*, q.title AS quiz_title, q.time_limit
+         FROM sessions s
+         JOIN quizzes q ON q.id = s.quiz_id
+         WHERE s.session_code = ?`,
+        [sessionCode]
+      )
+      session = rows[0]
+    }
+
+    if (!session) throw { status: 404, message: 'Session not found' }
+    if (session.status !== 'open') throw { status: 410, message: 'Session is closed' }
+
+    // Find student by barcode
     const [student] = await query(
       'SELECT * FROM students WHERE barcode = ?', [value]
     )
-    if (!student)
-      return { success: false, message: 'Student not found' }
-    return { success: true, message: 'Student identified', student }
+
+    if (!student) return { success: false, message: 'Invalid school ID', code: 'STUDENT_NOT_FOUND' }
+
+    // Register attendance by creating/returning attempt row
+    const [existingAttempt] = await query(
+      `SELECT a.id, a.status
+       FROM attempts a
+       WHERE a.session_id = ? AND a.student_id = ?`,
+      [session.id, student.id]
+    )
+
+    if (existingAttempt) {
+      return {
+        success: false,
+        message: 'Student already registered',
+        code: 'DUPLICATE',
+        student: {
+          id: student.id,
+          name: student.name,
+          student_id: student.student_id,
+          section: student.section,
+        },
+        session,
+        attendance: null,
+        participants: await getSessionParticipants(session.id),
+      }
+    }
+
+    const insert = await query(
+      `INSERT INTO attempts (session_id, student_id)
+       VALUES (?, ?)` ,
+      [session.id, student.id]
+    )
+
+
+
+    const attendance = {
+      attempt_id: insert.insertId,
+      session_id: session.id,
+      student_id: student.id,
+      joined_at: new Date().toISOString(),
+      attendance_status: 'present',
+    }
+
+    return {
+      success: true,
+      message: 'Student Successfully Registered',
+      student: {
+        id: student.id,
+        name: student.name,
+        student_id: student.student_id,
+        section: student.section,
+      },
+      session,
+      attendance,
+      participants: await getSessionParticipants(session.id),
+    }
   }
 
   throw { status: 400, message: 'Unknown scan type' }

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate, useParams } from 'react-router-dom'
 import api from '../services/api'
 
 export default function JoinPage() {
   const [searchParams]              = useSearchParams()
+  const { sessionCode: sessionCodeParam } = useParams()
+
   const navigate                    = useNavigate()
   const [step,      setStep]        = useState('identify')
   const [student,   setStudent]     = useState(null)
@@ -17,14 +19,25 @@ export default function JoinPage() {
   const code  = searchParams.get('code')
   const quiz  = searchParams.get('quiz')
 
+  const sessionCode = sessionCodeParam || code || ''
+
+
   // Verify session on load
   useEffect(() => {
+    if (sessionCodeParam) {
+      // New QR format: /join/:sessionCode (token can optionally be present)
+      verifySessionByCode()
+      return
+    }
+
     if (!token) {
       setError('Invalid QR code — no session token found.')
       return
     }
+
     verifySession()
-  }, [token])
+  }, [token, sessionCodeParam])
+
 
   async function verifySession() {
     setLoading(true)
@@ -53,6 +66,44 @@ export default function JoinPage() {
       setLoading(false)
     }
   }
+
+  async function verifySessionByCode() {
+    setLoading(true)
+    setError('')
+    try {
+      // Reuse /scan endpoint by sending the same token-based verifier when token exists.
+      // If token is absent, we still validate via token (fallback not implemented yet).
+      // Join URL we generate includes token in query string.
+      const res = await api.post('/scan', {
+        type: 'QR_CODE',
+        value: JSON.stringify({
+          token: token || searchParams.get('token'),
+          code: sessionCode,
+          quiz
+        })
+      })
+
+
+      if (res.data.success) {
+        setSession(res.data.session)
+      } else {
+        setError(res.data.message || 'Session not found')
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message
+      if (!msg && !err.response) {
+        setError(
+          'Cannot reach server. Make sure you are on the ' +
+          'same WiFi network as the teacher\'s computer.'
+        )
+      } else {
+        setError(msg || 'Session expired or not found')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
 
   async function handleIdentify(e) {
     e.preventDefault()

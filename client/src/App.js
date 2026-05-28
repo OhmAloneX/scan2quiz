@@ -41,6 +41,8 @@ export default function App() {
         }/>
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/join"      element={<JoinPage />} />
+        <Route path="/join/:sessionCode" element={<JoinPage />} />
+
         <Route path="/take-quiz/:attemptId" element={<TakeQuizPage />} />
         <Route path="/quizzes" element={
           <ProtectedRoute><QuizzesPage /></ProtectedRoute>

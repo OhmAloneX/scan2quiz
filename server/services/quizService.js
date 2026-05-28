@@ -129,7 +129,102 @@ async function deleteQuestion(questionId, teacherId) {
   await query('DELETE FROM questions WHERE id = ?', [questionId])
 }
 
+async function updateQuestion(quizId, questionId, teacherId, fields = {}) {
+  const {
+    question_text,
+    type,
+    points,
+    choices,
+  } = fields
+
+  if (!question_text?.trim()) {
+    throw { status: 400, message: 'Question text is required' }
+  }
+
+  // Ensure the question belongs to the teacher's quiz.
+  await query(
+    `UPDATE questions
+     SET question_text = ?,
+         type = ?,
+         points = ?
+     WHERE id = ?
+       AND quiz_id = ?
+       AND quiz_id IN (SELECT id FROM quizzes WHERE teacher_id = ?)` ,
+    [
+      question_text.trim(),
+      type || 'multiple_choice',
+      points || 1,
+      questionId,
+      quizId,
+      teacherId,
+    ]
+  )
+
+  // Replace choices. (Delete then insert; keeps correctness + ordering simple.)
+  await query(
+    `DELETE FROM choices
+     WHERE question_id = ?
+       AND question_id IN (
+         SELECT id FROM questions
+         WHERE quiz_id = ?
+           AND quiz_id IN (SELECT id FROM quizzes WHERE teacher_id = ?)
+       )`,
+    [questionId, quizId, teacherId]
+  )
+
+  if (Array.isArray(choices)) {
+    let orderIndex = 0
+    for (const c of choices) {
+      const text = (c?.text ?? '').toString().trim()
+      if (!text) continue
+
+      await query(
+        `INSERT INTO choices (question_id, choice_text, is_correct, order_index)
+         VALUES (?, ?, ?, ?)`,
+        [questionId, text, c?.isCorrect ? 1 : 0, orderIndex]
+      )
+      orderIndex += 1
+    }
+  }
+
+  const [q] = await query(
+    `SELECT id, quiz_id, question_text, type, points, order_index
+     FROM questions
+     WHERE id = ?
+       AND quiz_id = ?
+       AND quiz_id IN (SELECT id FROM quizzes WHERE teacher_id = ?)`,
+    [questionId, quizId, teacherId]
+  )
+
+  if (!q) throw { status: 404, message: 'Question not found' }
+
+  const choiceRows = await query(
+    `SELECT id, choice_text, is_correct, order_index
+     FROM choices
+     WHERE question_id = ?
+     ORDER BY order_index, id`,
+    [questionId]
+  )
+
+  return {
+    id: q.id,
+    quizId: q.quiz_id,
+    question_text: q.question_text,
+    type: q.type,
+    points: q.points,
+    order_index: q.order_index,
+    choices: choiceRows.map((c) => ({
+      id: c.id,
+      text: c.choice_text,
+      isCorrect: c.is_correct === 1,
+      order_index: c.order_index,
+    })),
+  }
+}
+
 module.exports = {
   getAllQuizzes, getQuizById, createQuiz,
-  updateQuiz, deleteQuiz, addQuestion, deleteQuestion
+  updateQuiz, deleteQuiz, addQuestion, deleteQuestion,
+  updateQuestion,
 }
+

@@ -4,9 +4,13 @@ import useResponsive from '../hooks/useResponsive'
 import Sidebar       from '../components/layout/Sidebar'
 import GlassCard     from '../components/ui/GlassCard'
 import Pagination    from '../components/ui/Pagination'
-import { getSessions, closeSession, createSession }
+import { getSessions, closeSession, createSession } from '../services/sessionService'
 
-  from '../services/sessionService'
+import StudentScannerModal from '../components/teacher/StudentScannerModal'
+
+import { fetchParticipants } from '../services/sessionService'
+
+
 import { getQuizzes } from '../services/quizService'
 
 export default function SessionsPage() {
@@ -15,6 +19,13 @@ export default function SessionsPage() {
   const [loading,   setLoading]   = useState(true)
   const [qrModal,   setQrModal]   = useState(null)
   const [showForm,  setShowForm]  = useState(false)
+
+  const [showScanner, setShowScanner] = useState(false)
+  const [activeSessionId, setActiveSessionId] = useState(null)
+  const [participants, setParticipants] = useState([])
+  const [participantsLoading, setParticipantsLoading] = useState(false)
+  const [participantsError, setParticipantsError] = useState('')
+
   const [selQuiz,   setSelQuiz]   = useState('')
   const [creating,  setCreating]  = useState(false)
   const [closing,   setClosing]   = useState(null)
