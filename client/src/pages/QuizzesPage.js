@@ -331,12 +331,20 @@ export default function QuizzesPage() {
                 { text: 'True', isCorrect: editForm.tfCorrect === true },
                 { text: 'False', isCorrect: editForm.tfCorrect === false },
               ]
-            : editForm.choices
-                .map((choice) => ({
-                  text: choice.text?.trim() || '',
-                  isCorrect: !!choice.isCorrect,
-                }))
-                .filter((choice) => choice.text),
+            : (() => {
+                const filtered = editForm.choices
+                  .map((choice) => ({
+                    text: choice.text?.trim() || '',
+                    isCorrect: !!choice.isCorrect,
+                  }))
+                  .filter((choice) => choice.text)
+                // Ensure at least one choice is marked correct
+                const hasCorrect = filtered.some((c) => c.isCorrect)
+                if (!hasCorrect && filtered.length > 0) {
+                  filtered[0].isCorrect = true
+                }
+                return filtered
+              })(),
       }
 
       await updateQuestion(editingQuestion.quizId, editingQuestion.id, payload)
@@ -729,10 +737,10 @@ export default function QuizzesPage() {
 
                         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                           {[
-                            ['📋', `${quiz.question_count} questions`],
-                            ['⏱', `${quiz.time_limit} min`],
-                            ['✅', `Pass: ${quiz.passing_score}%`],
-                            ['🔳', `${quiz.session_count} sessions`],
+                            [`${quiz.question_count} questions`],
+                            [`${quiz.time_limit} min`],
+                            [`Pass: ${quiz.passing_score}%`],
+                            [`${quiz.session_count} sessions`],
                           ].map(([icon, text]) => (
                             <span key={text} style={{ color: 'rgba(186,230,253,0.5)', fontSize: 12 }}>
                               {icon} {text}
@@ -1752,7 +1760,7 @@ export default function QuizzesPage() {
                       boxShadow: '0 0 18px rgba(34,211,238,0.18)',
                     }}
                   >
-                    📷 Scan Student ID
+                    Scan Student ID
                   </button>
 
                   <button

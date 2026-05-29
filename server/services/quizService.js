@@ -172,16 +172,22 @@ async function updateQuestion(quizId, questionId, teacherId, fields = {}) {
     [questionId, quizId, teacherId]
   )
 
-  if (Array.isArray(choices)) {
+  if (Array.isArray(choices) && choices.length > 0) {
+    // Ensure at least one choice is marked correct before inserting
+    const hasCorrect = choices.some((c) => c?.isCorrect)
     let orderIndex = 0
     for (const c of choices) {
       const text = (c?.text ?? '').toString().trim()
       if (!text) continue
 
+      let isCorrect = c?.isCorrect ? 1 : 0
+      // If no choice has isCorrect=true and this is the first choice, make it correct
+      if (!hasCorrect && orderIndex === 0) isCorrect = 1
+
       await query(
         `INSERT INTO choices (question_id, choice_text, is_correct, order_index)
          VALUES (?, ?, ?, ?)`,
-        [questionId, text, c?.isCorrect ? 1 : 0, orderIndex]
+        [questionId, text, isCorrect, orderIndex]
       )
       orderIndex += 1
     }

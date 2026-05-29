@@ -12,6 +12,7 @@ const quizRoutes = require('./routes/quizzes')
 const sessionRoutes = require('./routes/sessions')
 const analyticsRoutes = require('./routes/analytics')
 const auditRoutes = require('./routes/audit')
+const studentRoutes = require('./routes/students')
 
 
 const app  = express()
@@ -46,6 +47,7 @@ app.use('/api/quizzes', quizRoutes)
 app.use('/api', sessionRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/audit', auditRoutes)
+app.use('/api/students', studentRoutes)
 
 
 // Health check

@@ -592,7 +592,7 @@ const {
                   {paginatedStudents.map((student, i) => (
 
                     <tr key={student.id} style={{
-                      borderBottom: i < filtered.length - 1
+                      borderBottom: i < paginatedStudents.length - 1
                         ? '1px solid rgba(103,232,249,0.06)'
                         : 'none'
                     }}>

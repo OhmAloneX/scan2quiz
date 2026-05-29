@@ -202,13 +202,13 @@ fontFamily: "'Segoe UI',system-ui,sans-serif",
                 style={btnStyle(mode === 'qr')}
                 onClick={() => setMode('qr')}
               >
-                🔳 QR Code
+                QR Code
               </button>
               <button
                 style={btnStyle(mode === 'barcode')}
                 onClick={() => setMode('barcode')}
               >
-                📋 Barcode
+                Barcode
               </button>
             </div>
           </GlassCard>
@@ -382,7 +382,7 @@ fontFamily: "'Segoe UI',system-ui,sans-serif",
                   cursor:       'pointer',
                   fontFamily:   'inherit'
                 }}>
-                  📷 {error ? 'Retry Camera' : 'Start Scanner'}
+                  {error ? 'Retry Camera' : 'Start Scanner'}
                 </button>
               ) : (
                 <button onClick={stopScanner} style={{
