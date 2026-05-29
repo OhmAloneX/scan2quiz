@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import Sidebar from '../components/layout/Sidebar'
 import GlassCard from '../components/ui/GlassCard'
 import Pagination from '../components/ui/Pagination'
+import { useModal } from '../components/ui/ModalProvider'
 
 import useResponsive from '../hooks/useResponsive'
 
@@ -28,6 +29,7 @@ import { useValidation, rules } from '../hooks/useValidation'
 
 export default function QuizzesPage() {
   const { isMobile, isTablet } = useResponsive()
+  const { openConfirmModal, openToast } = useModal()
 
   const [quizzes, setQuizzes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -226,18 +228,33 @@ export default function QuizzesPage() {
 
       loadQuizzes()
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to create quiz')
+      openToast({
+        type: 'error',
+        title: 'Quiz failed',
+        message: err.response?.data?.message || 'Failed to create quiz'
+      })
     }
   }
 
   async function handleDeleteQuiz(id) {
-    if (!window.confirm('Delete this quiz?')) return
+    const confirmed = await openConfirmModal({
+      title: 'Delete quiz',
+      message: 'Delete this quiz? This cannot be undone.',
+      type: 'warning',
+      confirmLabel: 'Delete quiz',
+      cancelLabel: 'Cancel'
+    })
+    if (!confirmed) return
 
     try {
       await deleteQuiz(id)
       loadQuizzes()
     } catch (err) {
-      alert('Failed to delete quiz')
+      openToast({
+        type: 'error',
+        title: 'Quiz failed',
+        message: 'Failed to delete quiz'
+      })
     }
   }
 
@@ -363,7 +380,14 @@ export default function QuizzesPage() {
   }
 
   async function handleDeleteQuestionClick(quizId, questionId) {
-    if (!window.confirm('Delete this question?')) return
+    const confirmed = await openConfirmModal({
+      title: 'Delete question',
+      message: 'Delete this question? This cannot be undone.',
+      type: 'warning',
+      confirmLabel: 'Delete question',
+      cancelLabel: 'Cancel'
+    })
+    if (!confirmed) return
 
     try {
       await deleteQuestion(quizId, questionId)
@@ -381,7 +405,11 @@ export default function QuizzesPage() {
       setQrModal(res.data.data)
       setActiveSessionId(res.data.data?.id || null)
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to create session')
+      openToast({
+        type: 'error',
+        title: 'Session failed',
+        message: err.response?.data?.message || 'Failed to create session'
+      })
     }
   }
 

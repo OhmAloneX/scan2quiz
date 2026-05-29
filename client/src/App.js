@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth }    from './context/AuthContext'
+import { ModalProvider } from './components/ui/ModalProvider'
 import LoginPage      from './pages/LoginPage'
 import DashboardPage  from './pages/DashboardPage'
 import QuizzesPage    from './pages/QuizzesPage'
@@ -34,8 +35,9 @@ function ProtectedRoute({ children }) {
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
+      <ModalProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
         <Route path="/dashboard" element={
           <ProtectedRoute><DashboardPage /></ProtectedRoute>
         }/>
@@ -75,6 +77,7 @@ export default function App() {
           element={<Navigate to="/login" replace />}
         />
       </Routes>
+      </ModalProvider>
     </BrowserRouter>
   )
 }

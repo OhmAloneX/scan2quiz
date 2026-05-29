@@ -3,12 +3,14 @@ import { useValidation, rules } from '../hooks/useValidation'
 import Sidebar   from '../components/layout/Sidebar'
 import GlassCard from '../components/ui/GlassCard'
 import Pagination from '../components/ui/Pagination'
+import { useModal } from '../components/ui/ModalProvider'
 import api       from '../services/api'
 import useResponsive from '../hooks/useResponsive'
 
 
 export default function StudentsPage() {
   const { isMobile, isTablet } = useResponsive()
+  const { openConfirmModal, openToast } = useModal()
   const [students, setStudents] = useState([])
 
 
@@ -91,23 +93,34 @@ const {
       loadStudents()
 
     } catch (err) {
-      alert(
-        err.response?.data?.message ||
-        'Failed to add student'
-      )
+      openToast({
+        type: 'error',
+        title: 'Student failed',
+        message: err.response?.data?.message || 'Failed to add student'
+      })
     }
   }
 
   async function handleDelete(id, name) {
-    if (!window.confirm(
-      `Delete student "${name}"? This cannot be undone.`))
-      return
+    const confirmed = await openConfirmModal({
+      title: 'Delete student',
+      message: `Delete student "${name}"? This cannot be undone.`,
+      type: 'warning',
+      confirmLabel: 'Delete student',
+      cancelLabel: 'Cancel'
+    })
+    if (!confirmed) return
+
     setDeleting(id)
     try {
       await api.delete(`/students/${id}`)
       loadStudents()
     } catch (err) {
-      alert('Failed to delete student')
+      openToast({
+        type: 'error',
+        title: 'Student failed',
+        message: 'Failed to delete student'
+      })
     } finally {
       setDeleting(null)
     }

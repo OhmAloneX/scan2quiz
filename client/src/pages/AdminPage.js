@@ -6,6 +6,7 @@ import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import useResponsive from '../hooks/useResponsive'
+import { useModal } from '../components/ui/ModalProvider'
 
 export default function AdminPage() {
   const { user } = useAuth()
@@ -37,6 +38,8 @@ export default function AdminPage() {
     setCurrentPage(1)
   }, [rowsPerPage])
 
+  const { openConfirmModal } = useModal()
+
   async function loadUsers() {
     try {
       const res = await api.get('/auth/users')
@@ -67,12 +70,14 @@ export default function AdminPage() {
   }
 
   async function handleReject(id, name) {
-    if (
-      !window.confirm(
-        `Reject ${name}'s account? They will not be able to log in.`
-      )
-    )
-      return
+    const confirmed = await openConfirmModal({
+      title: 'Reject account',
+      message: `Reject ${name}'s account? They will not be able to log in.`,
+      type: 'warning',
+      confirmLabel: 'Reject user',
+      cancelLabel: 'Keep user'
+    })
+    if (!confirmed) return
 
     setActing(id)
     try {
@@ -87,12 +92,14 @@ export default function AdminPage() {
   }
 
   async function handleDelete(id, name) {
-    if (
-      !window.confirm(
-        `Delete ${name}'s account permanently? This cannot be undone.`
-      )
-    )
-      return
+    const confirmed = await openConfirmModal({
+      title: 'Delete account',
+      message: `Delete ${name}'s account permanently? This cannot be undone.`,
+      type: 'warning',
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel'
+    })
+    if (!confirmed) return
 
     setActing(id)
     try {

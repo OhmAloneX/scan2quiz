@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import GlassCard from '../components/ui/GlassCard'
+import { useModal } from '../components/ui/ModalProvider'
 import {
   getQuestions, submitAttempt, getResult
 } from '../services/sessionService'
@@ -16,6 +17,7 @@ export default function QuizPage() {
   const [submitting, setSubmitting] = useState(false)
   const [result,     setResult]     = useState(null)
   const [error,      setError]      = useState('')
+  const { openConfirmModal } = useModal()
 
   // Load questions on mount
   useEffect(() => {
@@ -42,11 +44,14 @@ export default function QuizPage() {
     if (!auto && questions.length > 0) {
       const answered = Object.keys(answers).length
       if (answered < questions.length) {
-        const skip = window.confirm(
-          `You have answered ${answered} of ` +
-          `${questions.length} questions. Submit anyway?`
-        )
-        if (!skip) return
+        const confirmed = await openConfirmModal({
+          title: 'Submit answers',
+          message: `You have answered ${answered} of ${questions.length} questions. Submit anyway?`,
+          type: 'warning',
+          confirmLabel: 'Submit',
+          cancelLabel: 'Review answers'
+        })
+        if (!confirmed) return
       }
     }
     setSubmitting(true)

@@ -16,6 +16,7 @@ export default function FormInput({
   disabled    = false,
   hint        = null,    // helper text below input
   autoComplete,
+  inputRef,
 }) {
   const [showPass, setShowPass] = useState(false)
   const isPassword = type === 'password'
@@ -68,6 +69,7 @@ export default function FormInput({
       {/* Input wrapper */}
       <div style={{ position: 'relative' }}>
         <input
+          ref={inputRef}
           name={name}
           type={inputType}
           value={value}

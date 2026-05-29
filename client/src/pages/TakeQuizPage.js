@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useSearchParams, useNavigate }
   from 'react-router-dom'
 import GlassCard from '../components/ui/GlassCard'
+import { useModal } from '../components/ui/ModalProvider'
 import api from '../services/api'
 
 export default function TakeQuizPage() {
@@ -17,6 +18,7 @@ export default function TakeQuizPage() {
   const [submitting, setSubmitting] = useState(false)
   const [result,     setResult]     = useState(null)
   const [error,      setError]      = useState('')
+  const { openConfirmModal } = useModal()
 
   // Axios instance with student token
   const studentApi = {
@@ -54,11 +56,14 @@ export default function TakeQuizPage() {
     if (!auto && questions.length > 0) {
       const answered = Object.keys(answers).length
       if (answered < questions.length) {
-        const ok = window.confirm(
-          `You answered ${answered} of ` +
-          `${questions.length} questions. Submit anyway?`
-        )
-        if (!ok) return
+        const confirmed = await openConfirmModal({
+          title: 'Submit quiz',
+          message: `You answered ${answered} of ${questions.length} questions. Submit anyway?`,
+          type: 'warning',
+          confirmLabel: 'Submit',
+          cancelLabel: 'Continue editing'
+        })
+        if (!confirmed) return
       }
     }
     setSubmitting(true)

@@ -278,5 +278,6 @@ module.exports = {
   getSessionByToken,
   getSessionsByTeacher,
   closeSession,
+  getSessionParticipants,
   handleScan
 }

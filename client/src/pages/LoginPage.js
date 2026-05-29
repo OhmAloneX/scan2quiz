@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth }       from '../context/AuthContext'
 import { useValidation, rules } from '../hooks/useValidation'
 import FormInput         from '../components/ui/FormInput'
 import api               from '../services/api'
+
 
 // Validation schema for login
 const schema = {
@@ -15,6 +16,13 @@ export default function LoginPage() {
   const navigate        = useNavigate()
   const { login }       = useAuth()
   const [form, setForm] = useState({ email: '', password: '' })
+
+  // Ensure the browser password manager/autofill does not repopulate these fields.
+  // These attributes are only applied on the actual inputs (not the hidden decoys).
+
+  const emailRef = useRef(null)
+  const passwordRef = useRef(null)
+
   const [serverError, setServerError] = useState('')
   const [loading, setLoading]         = useState(false)
 
@@ -28,6 +36,35 @@ export default function LoginPage() {
     handleChange(field, value)
     setServerError('')
   }
+
+  useEffect(() => {
+    // Force empty fields on mount (defeats Chrome/Edge re-applying saved credentials)
+    setForm({ email: '', password: '' })
+
+    // Also clear DOM input values defensively (some Chrome builds briefly render autofill values
+    // before React's controlled updates settle).
+    const emailEl = emailRef.current
+    const passEl = passwordRef.current
+    if (!emailEl || !passEl) return
+
+    const t2 = window.setTimeout(() => {
+      // Clear React state
+      setForm({ email: '', password: '' })
+
+      // Clear DOM values
+      emailEl.value = ''
+      passEl.value = ''
+
+      // Remove focus (Chrome autofill is frequently tied to focus/first paint)
+      emailEl.blur()
+      passEl.blur()
+    }, 0)
+
+    return () => {
+      window.clearTimeout(t2)
+    }
+  }, [])
+
 
   async function handleLogin(e) {
     e.preventDefault()
@@ -160,7 +197,36 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} noValidate>
+          <form
+            onSubmit={handleLogin}
+            noValidate
+            autoComplete="off"
+            method="post"
+            action="/"
+            autoCorrect="off"
+            spellCheck={false}
+          >
+
+            {/* Autofill/credential-matching resistance (Chrome/Edge) */}
+            {/* Hidden fields: reduce credential autofill matches in Chrome/Edge */}
+            <div style={{ display: 'none' }} aria-hidden="true">
+              <input
+                type="text"
+                name="fakeusernameremembered"
+                tabIndex={-1}
+                autoComplete="off"
+                value=""
+              />
+              <input
+                type="password"
+                name="fakepasswordremembered"
+                tabIndex={-1}
+                autoComplete="new-password"
+                value=""
+              />
+            </div>
+
+
             <div style={{
               display:       'flex',
               flexDirection: 'column',
@@ -168,28 +234,35 @@ export default function LoginPage() {
             }}>
               <FormInput
                 label="Email Address"
-                name="email"
+                name="login_email"
+
                 type="email"
                 required
                 value={form.email}
                 error={getError('email')}
                 isValid={isValid('email')}
-                autoComplete="email"
+                // Explicitly disable autofill/autocomplete heuristics for email.
+                autoComplete="off"
                 onChange={v => update('email', v)}
+
                 onBlur={v => handleBlur('email', v)}
+                inputRef={emailRef}
               />
 
               <FormInput
                 label="Password"
-                name="password"
+                name="login_password"
+
                 type="password"
                 required
                 value={form.password}
                 error={getError('password')}
                 isValid={isValid('password')}
-                autoComplete="current-password"
+                autoComplete="new-password"
                 onChange={v => update('password', v)}
+
                 onBlur={v => handleBlur('password', v)}
+                inputRef={passwordRef}
               />
 
               {/* Forgot password link */}

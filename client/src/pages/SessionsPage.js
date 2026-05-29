@@ -4,6 +4,7 @@ import useResponsive from '../hooks/useResponsive'
 import Sidebar       from '../components/layout/Sidebar'
 import GlassCard     from '../components/ui/GlassCard'
 import Pagination    from '../components/ui/Pagination'
+import { useModal } from '../components/ui/ModalProvider'
 import { getSessions, closeSession, createSession } from '../services/sessionService'
 
 import StudentScannerModal from '../components/teacher/StudentScannerModal'
@@ -31,6 +32,7 @@ export default function SessionsPage() {
   const [closing,   setClosing]   = useState(null)
 
   const responsive = useResponsive()
+  const { openConfirmModal, openToast } = useModal()
 
   useEffect(() => { loadData() }, [])
 
@@ -60,22 +62,36 @@ export default function SessionsPage() {
       setSelQuiz('')
       loadData()
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to create session')
+      openToast({
+        type: 'error',
+        title: 'Session failed',
+        message: err.response?.data?.message || 'Failed to create session'
+      })
     } finally {
       setCreating(false)
     }
   }
 
   async function handleClose(id) {
-    if (!window.confirm(
-      'Close this session? Students can no longer join.'))
-      return
+    const confirmed = await openConfirmModal({
+      title: 'Close session',
+      message: 'Close this session? Students can no longer join.',
+      type: 'warning',
+      confirmLabel: 'Close session',
+      cancelLabel: 'Keep open'
+    })
+    if (!confirmed) return
+
     setClosing(id)
     try {
       await closeSession(id)
       loadData()
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to close session')
+      openToast({
+        type: 'error',
+        title: 'Session failed',
+        message: err.response?.data?.message || 'Failed to close session'
+      })
     } finally {
       setClosing(null)
     }
@@ -500,12 +516,23 @@ export default function SessionsPage() {
                                 onClick={async () => {
                                   try {
                                     const q = quizzes.find(q => q.title === s.quiz_title)
-                                    if (!q) return alert('Quiz not found')
+                                    if (!q) {
+                                      openToast({
+                                        type: 'error',
+                                        title: 'Session failed',
+                                        message: 'Quiz not found'
+                                      })
+                                      return
+                                    }
                                     const res = await createSession(q.id)
                                     setQrModal(res.data.data)
                                     loadData()
                                   } catch {
-                                    alert('Could not create new session')
+                                    openToast({
+                                      type: 'error',
+                                      title: 'Session failed',
+                                      message: 'Could not create new session'
+                                    })
                                   }
                                 }}
                                 style={{
@@ -518,7 +545,7 @@ export default function SessionsPage() {
                                   cursor: 'pointer',
                                   fontFamily: 'inherit'
                                 }}>
-                                🔳 New QR
+                                New QR
                               </button>
 
                               {s.status === 'open' && (
@@ -535,7 +562,7 @@ export default function SessionsPage() {
                                     cursor: 'pointer',
                                     fontFamily: 'inherit'
                                   }}>
-                                  {closing === s.id ? '...' : '🔒 Close'}
+                                  {closing === s.id ? '...' : 'Close'}
                                 </button>
                               )}
                             </div>
